@@ -36,7 +36,7 @@ ${subrules.map((rule, index) => `    var part_${index} = parser.parse('${rule}',
 
 var parser = grammar
     .split('\n')
-    .filter(row => row.length > 0)
+    .filter(row => row.trim().length > 0)
     .map(row => row.split(' ').filter(w => w.length > 0))
     .map(parse)
     .join('');

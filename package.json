@@ -10,6 +10,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Jesper Oskarsson <jesosk@gmail.com>",
+  "license": "CC0-1.0"
 }

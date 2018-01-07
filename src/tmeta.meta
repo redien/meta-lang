@@ -356,7 +356,6 @@ text                  -none
 
 ruleLines fourSpaces text newline ruleLines  -multiple
 ruleLines fourSpaces text newline            -single
-ruleLines newline                            -empty
 
 parameter identifier
 parameter underscore
@@ -367,10 +366,11 @@ parameters                                   -none
 result 114 101 115 117 108 116
 
 rule name whitespaces parameters whitespaces newline ruleLines  -rule
+rule name whitespaces parameters whitespaces newline            -empty
 rule result whitespaces newline ruleLines                       -result
 
 template newlines rule template  -multiple
 template newlines rule           -single
 
-start template newlines . -start
+start template newlines .  -start
 

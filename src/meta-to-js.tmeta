@@ -1,50 +1,50 @@
 
-identity n
+number-single n
     <% n %>
 
-concat a b
+number-multiple a b
     <% a %><% b %>
 
-number-single n
-    <% identity n %>
-
-number-multiple a b
-    <% concat a b %>
-
 identifier-single n
-    <% identity n %>
+    <% n %>
 
 identifier-multiple a b
-    <% concat a b %>
+    <% a %><% b %>
 
 identifierRest-single n
-    <% identity n %>
+    <% n %>
 
 identifierRest-multiple a b
-    <% concat a b %>
+    <% a %><% b %>
 
 part-number number
+        
         if (input.charCodeAt(offset) === <% number %>) {
             parsed.push({result: input[offset], start: offset, end: offset + 1});
             offset += 1;
         } else {
             return null
         }
+        
 
 part-identifier identifier
+        
         parsed.push(parser.parse("<% identifier %>", input, offset, transform));
         if (parsed[parsed.length - 1] === null) { return null; }
         offset = parsed[parsed.length - 1].end;
+        
 
 part-eof
+        
         if (offset === input.length) {
             parsed.push({result: null, start: offset, end: offset});
         } else {
             return null;
         }
+        
 
 parts-single n
-    <% identity n %>
+    <% n %>
 
 parts-multiple part _ rest
     <% part %><% rest %>
@@ -52,6 +52,7 @@ parts-multiple part _ rest
 parts-none
 
 rule-withoutSuffix name _ parts _ _
+    
     parser.add("<% name %>", function (input, offset, transform) {
         const parsed = [];
         const startOffset = offset;
@@ -59,8 +60,10 @@ rule-withoutSuffix name _ parts _ _
         const parsedResults = parsed.map(function (p) { return p.result; });
         return {result: parsedResults, start: startOffset, end: offset};
     });
+    
 
 rule-withSuffix name _ parts _ suffix _
+    
     parser.add("<% name %>", function (input, offset, transform) {
         const parsed = [];
         const startOffset = offset;
@@ -68,6 +71,7 @@ rule-withSuffix name _ parts _ suffix _
         const parsedResults = parsed.map(function (p) { return p.result; });
         return {result: transform.<% name %>_<% suffix %>.apply(null, parsedResults), start: startOffset, end: offset};
     });
+    
 
 suffix-suffix _ suffix
     <% suffix %>
@@ -81,7 +85,7 @@ grammar-multiple _ rule _ rest
 start-start grammar _
     <% grammar %>
 
-start result
+result
     const parser = {rule: {}};
     parser.add = function (name, parseFunction) {
         let rule = parser.rule[name];
@@ -92,7 +96,7 @@ start result
         
         rule.push(parseFunction);
     };
-
+    
     parser.parse = function (name, input, offset, transform) {
         if (name === '.') {
             if (offset === input.length) {
@@ -111,19 +115,17 @@ start result
             if (alternatives === undefined) {
                 throw new Error('Unknown rule ' + name);
             }   
-
+    
             for (var i = 0; i < alternatives.length; ++i) {
                 var alternative = alternatives[i];
                 const result = alternative(input, offset, transform);
                 if (result !== null) { return result; }
             }   
-
+    
             return null;
         }   
     };
-
     <% result %>
-
     module.exports.parse = function (input, transform) {
         return parser.parse('start', input, 0, transform);
     };

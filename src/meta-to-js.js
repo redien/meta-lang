@@ -69,10 +69,10 @@ transform.start_start = function (grammar, _) {
     return grammar;
 };
 
-var parser = require(process.argv[2]);
+var parser = require('./meta');
 var fs = require('fs');
 
-var input = fs.readFileSync(process.argv[3], 'utf8');
+var input = fs.readFileSync(process.argv[2], 'utf8');
 var result = parser.parse(input, transform);
 
 var output = "\
@@ -122,5 +122,5 @@ module.exports.parse = function (input, transform) {\n\
 };\n\
 ";
 
-fs.writeFileSync(process.argv[4], output, 'utf8');
+fs.writeFileSync(process.argv[3], output, 'utf8');
 

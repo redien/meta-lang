@@ -1,4 +1,6 @@
 
+underscore 95
+dash 45
 space 32
 lf 10
 cr 13
@@ -345,25 +347,30 @@ identifier alphabetical                     -single
 identifierRest alphanumeric identifierRest  -multiple
 identifierRest alphanumeric                 -single
  
-name identifier
+name identifier dash identifier  -name
 
 fourSpaces space space space space
 
-text notNewline text
-text
+text notNewline text  -multiple
+text                  -none
 
-ruleLines fourSpaces text newline ruleLines
-ruleLines fourSpaces text newline
+ruleLines fourSpaces text newline ruleLines  -multiple
+ruleLines fourSpaces text newline            -single
+ruleLines newline                            -empty
 
 parameter identifier
+parameter underscore
 
-parameters parameter spaces parameters
-parameters parameter
+parameters parameter whitespaces parameters  -multiple
+parameters                                   -none
 
-rule name spaces parameters spaces newline ruleLines
+result 114 101 115 117 108 116
 
-template newlines rule template
-template newlines rule
+rule name whitespaces parameters whitespaces newline ruleLines  -rule
+rule result whitespaces newline ruleLines                       -result
+
+template newlines rule template  -multiple
+template newlines rule           -single
 
 start template newlines . -start
 

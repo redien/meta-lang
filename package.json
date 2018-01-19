@@ -8,7 +8,7 @@
     "watch": "^1.0.2"
   },
   "scripts": {
-      "meta": "node build/meta-to-js.js src/meta.meta build/meta-parser.js && node src/tmeta-to-js.js src/meta-to-js.tmeta build/meta-parser.js build/meta-to-js.js",
+      "meta": "node current/meta-to-js.js src/meta.meta build/meta-parser.js && node src/tmeta-to-js.js src/meta-to-js.tmeta build/meta-parser.js build/meta-to-js.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Jesper Oskarsson <jesosk@gmail.com>",

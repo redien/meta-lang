@@ -98,32 +98,18 @@ result
     };
     
     parser.parse = function (name, input, offset, transform) {
-        if (name === '.') {
-            if (offset === input.length) {
-                return {result: null, start: offset, end: offset};
-            } else {
-                return null;
-            }   
-        } else if (!isNaN(name)) {
-            if (input.charCodeAt(offset) === parseInt(name)) {
-                return {result: input[offset], start: offset, end: offset + 1}; 
-            } else {
-                return null;
-            }   
-        } else {
-            var alternatives = parser.rule[name];
-            if (alternatives === undefined) {
-                throw new Error('Unknown rule ' + name);
-            }   
-    
-            for (var i = 0; i < alternatives.length; ++i) {
-                var alternative = alternatives[i];
-                const result = alternative(input, offset, transform);
-                if (result !== null) { return result; }
-            }   
-    
-            return null;
+        var alternatives = parser.rule[name];
+        if (alternatives === undefined) {
+            throw new Error('Unknown rule ' + name);
         }   
+        
+        for (var i = 0; i < alternatives.length; ++i) {
+            var alternative = alternatives[i];
+            const result = alternative(input, offset, transform);
+            if (result !== null) { return result; }
+        }   
+        
+        return null;
     };
     <% result %>
     module.exports.parse = function (input, transform) {

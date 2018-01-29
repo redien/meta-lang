@@ -11,32 +11,18 @@ parser.add = function (name, parseFunction) {
 };
 
 parser.parse = function (name, input, offset, transform) {
-    if (name === '.') {
-        if (offset === input.length) {
-            return {result: null, start: offset, end: offset};
-        } else {
-            return null;
-        }   
-    } else if (!isNaN(name)) {
-        if (input.charCodeAt(offset) === parseInt(name)) {
-            return {result: input[offset], start: offset, end: offset + 1}; 
-        } else {
-            return null;
-        }   
-    } else {
-        var alternatives = parser.rule[name];
-        if (alternatives === undefined) {
-            throw new Error('Unknown rule ' + name);
-        }   
-
-        for (var i = 0; i < alternatives.length; ++i) {
-            var alternative = alternatives[i];
-            const result = alternative(input, offset, transform);
-            if (result !== null) { return result; }
-        }   
-
-        return null;
+    var alternatives = parser.rule[name];
+    if (alternatives === undefined) {
+        throw new Error('Unknown rule ' + name);
     }   
+    
+    for (var i = 0; i < alternatives.length; ++i) {
+        var alternative = alternatives[i];
+        const result = alternative(input, offset, transform);
+        if (result !== null) { return result; }
+    }   
+    
+    return null;
 };
 
 parser.add("dash", function (input, offset, transform) {
@@ -47,7 +33,7 @@ parser.add("dash", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -62,7 +48,7 @@ parser.add("dot", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -77,7 +63,7 @@ parser.add("space", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -92,7 +78,7 @@ parser.add("lf", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -107,7 +93,7 @@ parser.add("cr", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -230,7 +216,7 @@ parser.add("numeric", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -245,7 +231,7 @@ parser.add("numeric", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -260,7 +246,7 @@ parser.add("numeric", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -275,7 +261,7 @@ parser.add("numeric", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -290,7 +276,7 @@ parser.add("numeric", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -305,7 +291,7 @@ parser.add("numeric", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -320,7 +306,7 @@ parser.add("numeric", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -335,7 +321,7 @@ parser.add("numeric", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -350,7 +336,7 @@ parser.add("numeric", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -365,7 +351,7 @@ parser.add("numeric", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -408,7 +394,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -423,7 +409,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -438,7 +424,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -453,7 +439,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -468,7 +454,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -483,7 +469,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -498,7 +484,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -513,7 +499,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -528,7 +514,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -543,7 +529,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -558,7 +544,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -573,7 +559,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -588,7 +574,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -603,7 +589,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -618,7 +604,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -633,7 +619,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -648,7 +634,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -663,7 +649,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -678,7 +664,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -693,7 +679,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -708,7 +694,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -723,7 +709,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -738,7 +724,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -753,7 +739,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -768,7 +754,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -783,7 +769,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -798,7 +784,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -813,7 +799,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -828,7 +814,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -843,7 +829,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -858,7 +844,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -873,7 +859,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -888,7 +874,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -903,7 +889,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -918,7 +904,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -933,7 +919,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -948,7 +934,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -963,7 +949,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -978,7 +964,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -993,7 +979,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1008,7 +994,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1023,7 +1009,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1038,7 +1024,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1053,7 +1039,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1068,7 +1054,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1083,7 +1069,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1098,7 +1084,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1113,7 +1099,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1128,7 +1114,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1143,7 +1129,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1158,7 +1144,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1173,7 +1159,7 @@ parser.add("alphabetical", function (input, offset, transform) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});
         offset += 1;
     } else {
-        return null
+        return null;
     }
     
     const parsedResults = parsed.map(function (p) { return p.result; });
@@ -1503,7 +1489,7 @@ transform.part_number = function (number) {
         parsed.push({result: input[offset], start: offset, end: offset + 1});\n\
         offset += 1;\n\
     } else {\n\
-        return null\n\
+        return null;\n\
     }\n\
     ';
 };
@@ -1579,32 +1565,18 @@ parser.add = function (name, parseFunction) {\n\
 };\n\
 \n\
 parser.parse = function (name, input, offset, transform) {\n\
-    if (name === \'.\') {\n\
-        if (offset === input.length) {\n\
-            return {result: null, start: offset, end: offset};\n\
-        } else {\n\
-            return null;\n\
-        }   \n\
-    } else if (!isNaN(name)) {\n\
-        if (input.charCodeAt(offset) === parseInt(name)) {\n\
-            return {result: input[offset], start: offset, end: offset + 1}; \n\
-        } else {\n\
-            return null;\n\
-        }   \n\
-    } else {\n\
-        var alternatives = parser.rule[name];\n\
-        if (alternatives === undefined) {\n\
-            throw new Error(\'Unknown rule \' + name);\n\
-        }   \n\
-\n\
-        for (var i = 0; i < alternatives.length; ++i) {\n\
-            var alternative = alternatives[i];\n\
-            const result = alternative(input, offset, transform);\n\
-            if (result !== null) { return result; }\n\
-        }   \n\
-\n\
-        return null;\n\
+    var alternatives = parser.rule[name];\n\
+    if (alternatives === undefined) {\n\
+        throw new Error(\'Unknown rule \' + name);\n\
     }   \n\
+    \n\
+    for (var i = 0; i < alternatives.length; ++i) {\n\
+        var alternative = alternatives[i];\n\
+        const result = alternative(input, offset, transform);\n\
+        if (result !== null) { return result; }\n\
+    }   \n\
+    \n\
+    return null;\n\
 };\n\
 ' + result + '\n\
 module.exports.parse = function (input, transform) {\n\

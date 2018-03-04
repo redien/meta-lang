@@ -1,1467 +1,2307 @@
 
-const parser = {rule: {}};
-parser.add = function (name, parseFunction) {
-    let rule = parser.rule[name];
+var slice = Array.prototype.slice;
+function cont (f) {
+    var args = arguments;
+    var thunk = function () { return f.apply(null, slice.call(args, 1)); }
+    thunk.isThunk = true;
+    return thunk;
+}
+function identity (x) { return x; }
+function trampoline (thunk) {
+    while (thunk && thunk.isThunk) {
+        thunk = thunk();
+    }
+    return thunk;
+}
+var rules = {};
+function addRule (name, parseFunction) {
+    let rule = rules[name];
     if (rule === undefined) {
         rule = []; 
-        parser.rule[name] = rule;
-    }   
-    
+        rules[name] = rule;
+    }
     rule.push(parseFunction);
 };
-
-parser.parse = function (name, input, offset, transform) {
-    var alternatives = parser.rule[name];
+function match (alternatives, input, offset, transform, continuation) {
+    if (alternatives.length === 0) {
+        return cont(continuation, null);
+    } else {
+        return cont(alternatives[0], input, offset, transform, function (result) {
+            if (result !== null) { return cont(continuation, result); }
+            return cont(match, alternatives.slice(1), input, offset, transform, continuation);
+        });
+    }
+}
+function parse (name, input, offset, transform, continuation) {
+    var alternatives = rules[name];
     if (alternatives === undefined) {
         throw new Error('Unknown rule ' + name);
-    }   
-    
-    for (var i = 0; i < alternatives.length; ++i) {
-        var alternative = alternatives[i];
-        const result = alternative(input, offset, transform);
-        if (result !== null) { return result; }
-    }   
-    
-    return null;
-};
-
-parser.add("dash", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 45) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
     }
+    return cont(match, alternatives, input, offset, transform, continuation);
+}
+
+addRule("dash", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 45) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
+    
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("dot", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("dot", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 46) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 46) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("space", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("space", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 32) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 32) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("lf", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("lf", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 10) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 10) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("cr", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("cr", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 13) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 13) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("newline", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("newline", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("lf", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "cr", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("cr", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "lf", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("newline", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("newline", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("cr", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "lf", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("lf", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "cr", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("newline", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("newline", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("lf", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "lf", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("newlines", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("newlines", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("newline", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "newlines", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("newlines", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "newline", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("newlines", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("newlines", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "newline", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("newline", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "whitespaces", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("newlines", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("newlines", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
 
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("whitespaces", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("whitespaces", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("space", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "whitespaces", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "space", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("whitespaces", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("whitespaces", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
 
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 48) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 48) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 49) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 49) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 50) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 50) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 51) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 51) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 52) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 52) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 53) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 53) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 54) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 54) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 55) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 55) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 56) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 56) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 57) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 57) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("number", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("number", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.number_multiple.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("numeric", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "number", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("number", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "numeric", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.number_multiple.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("number", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("number", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.number_single.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("numeric", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "numeric", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.number_single.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 65) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 65) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 66) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 66) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 67) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 67) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 68) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 68) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 69) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 69) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 70) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 70) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 71) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 71) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 72) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 72) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 73) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 73) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 74) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 74) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 75) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 75) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 76) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 76) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 77) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 77) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 78) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 78) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 79) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 79) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 80) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 80) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 81) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 81) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 82) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 82) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 83) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 83) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 84) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 84) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 85) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 85) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 86) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 86) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 87) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 87) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 88) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 88) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 89) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 89) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 90) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 90) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 97) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 97) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 98) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 98) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 99) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 99) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 100) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 100) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 101) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 101) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 102) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 102) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 103) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 103) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 104) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 104) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 105) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 105) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 106) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 106) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 107) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 107) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 108) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 108) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 109) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 109) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 110) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 110) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 111) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 111) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 112) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 112) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 113) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 113) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 114) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 114) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 115) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 115) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 116) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 116) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 117) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 117) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 118) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 118) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 119) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 119) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 120) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 120) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 121) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 121) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    if (input.charCodeAt(offset) === 122) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === 122) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphanumeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphanumeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("numeric", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "numeric", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("alphanumeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("alphanumeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("alphabetical", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "alphabetical", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("identifier", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("identifier", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.identifier_multiple.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("alphabetical", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "identifierRest", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("identifierRest", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "alphabetical", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.identifier_multiple.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("identifier", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("identifier", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.identifier_single.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("alphabetical", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "alphabetical", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.identifier_single.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("identifierRest", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("identifierRest", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.identifierRest_multiple.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("alphanumeric", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "identifierRest", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("identifierRest", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "alphanumeric", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.identifierRest_multiple.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("identifierRest", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("identifierRest", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.identifierRest_single.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("alphanumeric", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "alphanumeric", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.identifierRest_single.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("grammar", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("grammar", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.grammar_multiple.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("newlines", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "grammar", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("rule", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "newlines", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("newlines", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "rule", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("grammar", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "newlines", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.grammar_multiple.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("grammar", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("grammar", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.grammar_single.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("newlines", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "newlines", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("rule", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "rule", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("newlines", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "newlines", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.grammar_single.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("rule", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("rule", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.rule_withSuffix.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("identifier", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "newline", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "suffix", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("parts", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "whitespaces", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "parts", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("suffix", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "whitespaces", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("newline", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "identifier", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.rule_withSuffix.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("rule", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("rule", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.rule_withoutSuffix.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("identifier", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "newline", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "whitespaces", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("parts", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "parts", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "whitespaces", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("newline", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "identifier", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.rule_withoutSuffix.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("suffix", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("suffix", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.suffix_suffix.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("dash", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "identifier", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("identifier", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "dash", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.suffix_suffix.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("parts", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("parts", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.parts_multiple.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("part", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "parts", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "whitespaces", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
         
-    parsed.push(parser.parse("parts", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "part", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.parts_multiple.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("parts", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("parts", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.parts_single.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("part", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "part", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.parts_single.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("parts", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("parts", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.parts_none.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
 
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.parts_none.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("part", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("part", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.part_identifier.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("identifier", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "identifier", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.part_identifier.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("part", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("part", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.part_number.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("number", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "number", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.part_number.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("part", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("part", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.part_eof.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("dot", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "dot", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.part_eof.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
-parser.add("start", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
+addRule("start", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform.start_start.apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
     
-    parsed.push(parser.parse("grammar", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            if (offset === input.length) {
+                return cont(continuation, items.concat([{result: null, start: offset, end: offset}]), offset);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }(continuation));
         
-    if (offset === input.length) {
-        parsed.push({result: null, start: offset, end: offset});
-    } else {
-        return null;
-    }
+    continuation = (function (continuation) {
+        return function (items, offset) {
+            return cont(parse, "grammar", input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }(continuation));
     
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.start_start.apply(null, parsedResults), start: startOffset, end: offset};
+    return cont(continuation, [], startOffset);
 });
 
 module.exports.parse = function (input, transform) {
-    return parser.parse('start', input, 0, transform);
+    return trampoline(cont(parse, 'start', input, 0, transform, identity));
 };
 var transform = {};
 
@@ -1485,58 +2325,78 @@ transform.identifierRest_multiple = function (a, b) {
 };
 transform.part_number = function (number) {
     return '    \n\
-    if (input.charCodeAt(offset) === ' + number + ') {\n\
-        parsed.push({result: input[offset], start: offset, end: offset + 1});\n\
-        offset += 1;\n\
-    } else {\n\
-        return null;\n\
-    }\n\
+    continuation = (function (continuation) {\n\
+        return function (items, offset) {\n\
+            if (input.charCodeAt(offset) === ' + number + ') {\n\
+                var result = {result: input[offset], start: offset, end: offset + 1};\n\
+                return cont(continuation, items.concat([result]), offset + 1);\n\
+            } else {\n\
+                return cont(returnFromRule, null);\n\
+            }\n\
+        };\n\
+    }(continuation));\n\
     ';
 };
 transform.part_identifier = function (identifier) {
     return '    \n\
-    parsed.push(parser.parse("' + identifier + '", input, offset, transform));\n\
-    if (parsed[parsed.length - 1] === null) { return null; }\n\
-    offset = parsed[parsed.length - 1].end;\n\
+    continuation = (function (continuation) {\n\
+        return function (items, offset) {\n\
+            return cont(parse, "' + identifier + '", input, offset, transform, function (result) {\n\
+                if (result === null) { return cont(returnFromRule, null); }\n\
+                return cont(continuation, items.concat([result]), result.end);\n\
+            });\n\
+        };\n\
+    }(continuation));\n\
     ';
 };
 transform.part_eof = function () {
     return '    \n\
-    if (offset === input.length) {\n\
-        parsed.push({result: null, start: offset, end: offset});\n\
-    } else {\n\
-        return null;\n\
-    }\n\
+    continuation = (function (continuation) {\n\
+        return function (items, offset) {\n\
+            if (offset === input.length) {\n\
+                return cont(continuation, items.concat([{result: null, start: offset, end: offset}]), offset);\n\
+            } else {\n\
+                return cont(returnFromRule, null);\n\
+            }\n\
+        };\n\
+    }(continuation));\n\
     ';
 };
 transform.parts_single = function (n) {
     return '' + n + '';
 };
 transform.parts_multiple = function (part, _, rest) {
-    return '' + part + '' + rest + '';
+    return '' + rest + '' + part + '';
 };
 transform.parts_none = function () {
     return '';
 };
 transform.rule_withoutSuffix = function (name, _, parts, _, _) {
     return '\n\
-parser.add("' + name + '", function (input, offset, transform) {\n\
-    const parsed = [];\n\
-    const startOffset = offset;\n\
+addRule("' + name + '", function (input, offset, transform, continuation) {\n\
+    var returnFromRule = continuation;\n\
+    var startOffset = offset;\n\
+    continuation = function (items, offset) {\n\
+        var results = items.map(function (i) { return i.result; });\n\
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});\n\
+    };\n\
 ' + parts + '\n\
-    const parsedResults = parsed.map(function (p) { return p.result; });\n\
-    return {result: parsedResults, start: startOffset, end: offset};\n\
+    return cont(continuation, [], startOffset);\n\
 });\n\
 ';
 };
 transform.rule_withSuffix = function (name, _, parts, _, suffix, _) {
     return '\n\
-parser.add("' + name + '", function (input, offset, transform) {\n\
-    const parsed = [];\n\
-    const startOffset = offset;\n\
+addRule("' + name + '", function (input, offset, transform, continuation) {\n\
+    var returnFromRule = continuation;\n\
+    var startOffset = offset;\n\
+    continuation = function (items, offset) {\n\
+        var results = items.map(function (i) { return i.result; });\n\
+        var transformedResults = transform.' + name + '_' + suffix + '.apply(null, results);\n\
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});\n\
+    };\n\
 ' + parts + '\n\
-    const parsedResults = parsed.map(function (p) { return p.result; });\n\
-    return {result: transform.' + name + '_' + suffix + '.apply(null, parsedResults), start: startOffset, end: offset};\n\
+    return cont(continuation, [], startOffset);\n\
 });\n\
 ';
 };
@@ -1553,34 +2413,49 @@ transform.start_start = function (grammar, _) {
     return '' + grammar + '';
 };
 var transformer = function (result) {
-    return 'const parser = {rule: {}};\n\
-parser.add = function (name, parseFunction) {\n\
-    let rule = parser.rule[name];\n\
+    return 'var slice = Array.prototype.slice;\n\
+function cont (f) {\n\
+    var args = arguments;\n\
+    var thunk = function () { return f.apply(null, slice.call(args, 1)); }\n\
+    thunk.isThunk = true;\n\
+    return thunk;\n\
+}\n\
+function identity (x) { return x; }\n\
+function trampoline (thunk) {\n\
+    while (thunk && thunk.isThunk) {\n\
+        thunk = thunk();\n\
+    }\n\
+    return thunk;\n\
+}\n\
+var rules = {};\n\
+function addRule (name, parseFunction) {\n\
+    let rule = rules[name];\n\
     if (rule === undefined) {\n\
         rule = []; \n\
-        parser.rule[name] = rule;\n\
-    }   \n\
-    \n\
+        rules[name] = rule;\n\
+    }\n\
     rule.push(parseFunction);\n\
 };\n\
-\n\
-parser.parse = function (name, input, offset, transform) {\n\
-    var alternatives = parser.rule[name];\n\
+function match (alternatives, input, offset, transform, continuation) {\n\
+    if (alternatives.length === 0) {\n\
+        return cont(continuation, null);\n\
+    } else {\n\
+        return cont(alternatives[0], input, offset, transform, function (result) {\n\
+            if (result !== null) { return cont(continuation, result); }\n\
+            return cont(match, alternatives.slice(1), input, offset, transform, continuation);\n\
+        });\n\
+    }\n\
+}\n\
+function parse (name, input, offset, transform, continuation) {\n\
+    var alternatives = rules[name];\n\
     if (alternatives === undefined) {\n\
         throw new Error(\'Unknown rule \' + name);\n\
-    }   \n\
-    \n\
-    for (var i = 0; i < alternatives.length; ++i) {\n\
-        var alternative = alternatives[i];\n\
-        const result = alternative(input, offset, transform);\n\
-        if (result !== null) { return result; }\n\
-    }   \n\
-    \n\
-    return null;\n\
-};\n\
+    }\n\
+    return cont(match, alternatives, input, offset, transform, continuation);\n\
+}\n\
 ' + result + '\n\
 module.exports.parse = function (input, transform) {\n\
-    return parser.parse(\'start\', input, 0, transform);\n\
+    return trampoline(cont(parse, \'start\', input, 0, transform, identity));\n\
 };';
 };
 var fs = require('fs');

@@ -54,10 +54,10 @@ parts-none
 rule-withoutSuffix name _ parts _ _
     
     parser.add("<% name %>", function (input, offset, transform) {
-        const parsed = [];
-        const startOffset = offset;
+        var parsed = [];
+        var startOffset = offset;
     <% parts %>
-        const parsedResults = parsed.map(function (p) { return p.result; });
+        var parsedResults = parsed.map(function (p) { return p.result; });
         return {result: parsedResults, start: startOffset, end: offset};
     });
     
@@ -65,10 +65,10 @@ rule-withoutSuffix name _ parts _ _
 rule-withSuffix name _ parts _ suffix _
     
     parser.add("<% name %>", function (input, offset, transform) {
-        const parsed = [];
-        const startOffset = offset;
+        var parsed = [];
+        var startOffset = offset;
     <% parts %>
-        const parsedResults = parsed.map(function (p) { return p.result; });
+        var parsedResults = parsed.map(function (p) { return p.result; });
         return {result: transform.<% name %>_<% suffix %>.apply(null, parsedResults), start: startOffset, end: offset};
     });
     
@@ -86,7 +86,7 @@ start-start grammar _
     <% grammar %>
 
 result
-    const parser = {rule: {}};
+    var parser = {rule: {}};
     parser.add = function (name, parseFunction) {
         let rule = parser.rule[name];
         if (rule === undefined) {
@@ -105,7 +105,7 @@ result
         
         for (var i = 0; i < alternatives.length; ++i) {
             var alternative = alternatives[i];
-            const result = alternative(input, offset, transform);
+            var result = alternative(input, offset, transform);
             if (result !== null) { return result; }
         }   
         

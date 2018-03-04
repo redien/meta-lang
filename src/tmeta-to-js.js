@@ -73,7 +73,7 @@ transform.start_start = function (template, _) {
     return template;
 };
 
-var parser = require('./tmeta.js');
+var parser = require('../current/tmeta-parser.js');
 var fs = require('fs');
 
 var input = fs.readFileSync(process.argv[2], 'utf8');

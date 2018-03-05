@@ -41,10 +41,8 @@ rule-withoutSuffix name _ parts _ _
     
     addRule("<% name %>", function (input, offset, transform, continuation) {
         var returnFromRule = continuation;
-        var startOffset = offset;
         continuation = initialContinuation(returnFromRule, offset);
-    <% parts %>
-        return cont(continuation, [], startOffset);
+    <% parts %>    return cont(continuation, [], offset);
     });
     
 
@@ -52,10 +50,8 @@ rule-withSuffix name _ parts _ suffix _
     
     addRule("<% name %>", function (input, offset, transform, continuation) {
         var returnFromRule = continuation;
-        var startOffset = offset;
         continuation = initialSuffixContinuation("<% name %>_<% suffix %>", returnFromRule, offset, transform);
-    <% parts %>
-        return cont(continuation, [], startOffset);
+    <% parts %>    return cont(continuation, [], offset);
     });
     
 

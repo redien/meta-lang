@@ -10,7 +10,8 @@
   "scripts": {
     "meta": "node current/meta-to-js.js src/meta.meta build/meta-parser.js && node src/tmeta-to-js.js src/meta-to-js.tmeta build/meta-parser.js build/meta-to-js.js",
     "tmeta": "node current/meta-to-js.js src/tmeta.meta build/tmeta-parser.js",
-    "update-parsers": "npm run tmeta && cp build/tmeta-parser.js current/ && npm run tmeta && cp build/tmeta-parser.js current/ && npm run tmeta && npm run meta && cp build/meta-parser.js current/ && npm run meta && cp build/meta-parser.js current/ && npm run meta",
+    "update-meta": "npm run meta && cp build/meta-*.js current/ && npm run meta && cp build/meta-*.js current/ && npm run meta",
+    "update-tmeta": "npm run tmeta && cp build/tmeta-*.js current/ && npm run tmeta && cp build/tmeta-*.js current/ && npm run tmeta",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Jesper Oskarsson <jesosk@gmail.com>",

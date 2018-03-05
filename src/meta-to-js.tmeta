@@ -27,7 +27,7 @@ part-identifier identifier
 
 part-eof
         continuation = eofParser(continuation, returnFromRule, input);
-
+    
 
 parts-single n
     <% n %>

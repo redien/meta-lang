@@ -954,7 +954,8 @@ addRule("start", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialSuffixContinuation("start_start", returnFromRule, offset, transform);
-    continuation = eofParser(continuation, returnFromRule, input);    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);
+    continuation = eofParser(continuation, returnFromRule, input);
+    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);
 
     return cont(continuation, [], startOffset);
 });
@@ -991,7 +992,8 @@ transform.part_identifier = function (identifier) {
 ';
 };
 transform.part_eof = function () {
-    return '    continuation = eofParser(continuation, returnFromRule, input);';
+    return '    continuation = eofParser(continuation, returnFromRule, input);\n\
+';
 };
 transform.parts_single = function (n) {
     return '' + n + '';

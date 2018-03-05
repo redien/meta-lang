@@ -953,7 +953,8 @@ addRule("start", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialSuffixContinuation("start_start", returnFromRule, offset, transform);
-    continuation = eofParser(continuation, returnFromRule, input);    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);
+    continuation = eofParser(continuation, returnFromRule, input);
+    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);
 
     return cont(continuation, [], startOffset);
 });

@@ -23,11 +23,11 @@ part-number number
 
 part-identifier identifier
         continuation = identifierParser("<% identifier %>", continuation, returnFromRule, input, transform);
-
+    
 
 part-eof
         continuation = eofParser(continuation, returnFromRule, input);
-    
+
 
 parts-single n
     <% n %>

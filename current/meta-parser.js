@@ -130,15 +130,9 @@ addRule("newline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialContinuation(returnFromRule, offset);
-    continuation = identifierParser("cr", continuation, returnFromRule, input, transform);    continuation = identifierParser("lf", continuation, returnFromRule, input, transform);
-    return cont(continuation, [], startOffset);
-});
+    continuation = identifierParser("cr", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("lf", continuation, returnFromRule, input, transform);
 
-addRule("newline", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    var startOffset = offset;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = identifierParser("lf", continuation, returnFromRule, input, transform);    continuation = identifierParser("cr", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
@@ -147,6 +141,17 @@ addRule("newline", function (input, offset, transform, continuation) {
     var startOffset = offset;
     continuation = initialContinuation(returnFromRule, offset);
     continuation = identifierParser("lf", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("cr", continuation, returnFromRule, input, transform);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("newline", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("lf", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -154,7 +159,9 @@ addRule("newlines", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialContinuation(returnFromRule, offset);
-    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -162,7 +169,9 @@ addRule("newlines", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialContinuation(returnFromRule, offset);
-    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -178,7 +187,9 @@ addRule("whitespaces", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialContinuation(returnFromRule, offset);
-    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("space", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("space", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -284,7 +295,9 @@ addRule("number", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialSuffixContinuation("number_multiple", returnFromRule, offset, transform);
-    continuation = identifierParser("number", continuation, returnFromRule, input, transform);    continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("number", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -293,6 +306,7 @@ addRule("number", function (input, offset, transform, continuation) {
     var startOffset = offset;
     continuation = initialSuffixContinuation("number_single", returnFromRule, offset, transform);
     continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -769,6 +783,7 @@ addRule("alphanumeric", function (input, offset, transform, continuation) {
     var startOffset = offset;
     continuation = initialContinuation(returnFromRule, offset);
     continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -777,6 +792,7 @@ addRule("alphanumeric", function (input, offset, transform, continuation) {
     var startOffset = offset;
     continuation = initialContinuation(returnFromRule, offset);
     continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -784,7 +800,9 @@ addRule("identifier", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialSuffixContinuation("identifier_multiple", returnFromRule, offset, transform);
-    continuation = identifierParser("identifierRest", continuation, returnFromRule, input, transform);    continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("identifierRest", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -793,6 +811,7 @@ addRule("identifier", function (input, offset, transform, continuation) {
     var startOffset = offset;
     continuation = initialSuffixContinuation("identifier_single", returnFromRule, offset, transform);
     continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -800,7 +819,9 @@ addRule("identifierRest", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialSuffixContinuation("identifierRest_multiple", returnFromRule, offset, transform);
-    continuation = identifierParser("identifierRest", continuation, returnFromRule, input, transform);    continuation = identifierParser("alphanumeric", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("identifierRest", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("alphanumeric", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -809,6 +830,7 @@ addRule("identifierRest", function (input, offset, transform, continuation) {
     var startOffset = offset;
     continuation = initialSuffixContinuation("identifierRest_single", returnFromRule, offset, transform);
     continuation = identifierParser("alphanumeric", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -816,7 +838,11 @@ addRule("grammar", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialSuffixContinuation("grammar_multiple", returnFromRule, offset, transform);
-    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);    continuation = identifierParser("rule", continuation, returnFromRule, input, transform);    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("rule", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -824,7 +850,10 @@ addRule("grammar", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialSuffixContinuation("grammar_single", returnFromRule, offset, transform);
-    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);    continuation = identifierParser("rule", continuation, returnFromRule, input, transform);    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("rule", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -832,7 +861,13 @@ addRule("rule", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialSuffixContinuation("rule_withSuffix", returnFromRule, offset, transform);
-    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);    continuation = identifierParser("suffix", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("parts", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("suffix", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("parts", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -840,7 +875,12 @@ addRule("rule", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialSuffixContinuation("rule_withoutSuffix", returnFromRule, offset, transform);
-    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("parts", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("parts", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -848,7 +888,9 @@ addRule("suffix", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialSuffixContinuation("suffix_suffix", returnFromRule, offset, transform);
-    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);    continuation = identifierParser("dash", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("dash", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -856,7 +898,10 @@ addRule("parts", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialSuffixContinuation("parts_multiple", returnFromRule, offset, transform);
-    continuation = identifierParser("parts", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("part", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("parts", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("part", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -865,6 +910,7 @@ addRule("parts", function (input, offset, transform, continuation) {
     var startOffset = offset;
     continuation = initialSuffixContinuation("parts_single", returnFromRule, offset, transform);
     continuation = identifierParser("part", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -881,6 +927,7 @@ addRule("part", function (input, offset, transform, continuation) {
     var startOffset = offset;
     continuation = initialSuffixContinuation("part_identifier", returnFromRule, offset, transform);
     continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -889,6 +936,7 @@ addRule("part", function (input, offset, transform, continuation) {
     var startOffset = offset;
     continuation = initialSuffixContinuation("part_number", returnFromRule, offset, transform);
     continuation = identifierParser("number", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -897,6 +945,7 @@ addRule("part", function (input, offset, transform, continuation) {
     var startOffset = offset;
     continuation = initialSuffixContinuation("part_eof", returnFromRule, offset, transform);
     continuation = identifierParser("dot", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 
@@ -904,8 +953,8 @@ addRule("start", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
     continuation = initialSuffixContinuation("start_start", returnFromRule, offset, transform);
-    continuation = eofParser(continuation, returnFromRule, input);
-    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);
+    continuation = eofParser(continuation, returnFromRule, input);    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);
+
     return cont(continuation, [], startOffset);
 });
 

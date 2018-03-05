@@ -8,8 +8,8 @@
     "watch": "^1.0.2"
   },
   "scripts": {
-    "meta": "node current/meta-to-js.js src/meta.meta build/meta-parser.js && node src/tmeta-to-js.js src/meta-to-js.tmeta build/meta-parser.js build/meta-to-js.js",
-    "tmeta": "node current/meta-to-js.js src/tmeta.meta build/tmeta-parser.js",
+    "meta": "mkdir -p build && node current/meta-to-js.js src/meta.meta build/meta-parser.js && node src/tmeta-to-js.js src/meta-to-js.tmeta build/meta-parser.js build/meta-to-js.js",
+    "tmeta": "mkdir -p build && node current/meta-to-js.js src/tmeta.meta build/tmeta-parser.js",
     "update": "npm run meta && npm run tmeta && cp build/*.js current/ && npm run meta && npm run tmeta && cp build/*.js current/ && npm run tmeta && npm run tmeta",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

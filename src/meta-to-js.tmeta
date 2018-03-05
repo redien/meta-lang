@@ -18,42 +18,15 @@ identifierRest-multiple a b
     <% a %><% b %>
 
 part-number number
-        
-        continuation = (function (continuation) {
-            return function (items, offset) {
-                if (input.charCodeAt(offset) === <% number %>) {
-                    var result = {result: input[offset], start: offset, end: offset + 1};
-                    return cont(continuation, items.concat([result]), offset + 1);
-                } else {
-                    return cont(returnFromRule, null);
-                }
-            };
-        }(continuation));
+        continuation = numberParser(<% number %>, continuation, returnFromRule, input);
         
 
 part-identifier identifier
-        
-        continuation = (function (continuation) {
-            return function (items, offset) {
-                return cont(parse, "<% identifier %>", input, offset, transform, function (result) {
-                    if (result === null) { return cont(returnFromRule, null); }
-                    return cont(continuation, items.concat([result]), result.end);
-                });
-            };
-        }(continuation));
+        continuation = identifierParser("<% identifier %>", continuation, returnFromRule, input, transform);
         
 
 part-eof
-        
-        continuation = (function (continuation) {
-            return function (items, offset) {
-                if (offset === input.length) {
-                    return cont(continuation, items.concat([{result: null, start: offset, end: offset}]), offset);
-                } else {
-                    return cont(returnFromRule, null);
-                }
-            };
-        }(continuation));
+        continuation = eofParser(continuation, returnFromRule, input);
         
 
 parts-single n
@@ -138,6 +111,33 @@ result
                 return cont(match, alternatives.slice(1), input, offset, transform, continuation);
             });
         }
+    }
+    function numberParser (number, continuation, returnFromRule, input) {
+        return function (items, offset) {
+            if (input.charCodeAt(offset) === number) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }
+    function identifierParser (identifier, continuation, returnFromRule, input, transform) {
+        return function (items, offset) {
+            return cont(parse, identifier, input, offset, transform, function (result) {
+                if (result === null) { return cont(returnFromRule, null); }
+                return cont(continuation, items.concat([result]), result.end);
+            });
+        };
+    }
+    function eofParser (continuation, returnFromRule, input) {
+        return function (items, offset) {
+            if (offset === input.length) {
+                return cont(continuation, items.concat([{result: null, start: offset, end: offset}]), offset);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
     }
     function parse (name, input, offset, transform, continuation) {
         var alternatives = rules[name];

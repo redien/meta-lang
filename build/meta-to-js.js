@@ -32,6 +32,33 @@ function match (alternatives, input, offset, transform, continuation) {
         });
     }
 }
+function numberParser (number, continuation, returnFromRule, input) {
+    return function (items, offset) {
+        if (input.charCodeAt(offset) === number) {
+            var result = {result: input[offset], start: offset, end: offset + 1};
+            return cont(continuation, items.concat([result]), offset + 1);
+        } else {
+            return cont(returnFromRule, null);
+        }
+    };
+}
+function identifierParser (identifier, continuation, returnFromRule, input, transform) {
+    return function (items, offset) {
+        return cont(parse, identifier, input, offset, transform, function (result) {
+            if (result === null) { return cont(returnFromRule, null); }
+            return cont(continuation, items.concat([result]), result.end);
+        });
+    };
+}
+function eofParser (continuation, returnFromRule, input) {
+    return function (items, offset) {
+        if (offset === input.length) {
+            return cont(continuation, items.concat([{result: null, start: offset, end: offset}]), offset);
+        } else {
+            return cont(returnFromRule, null);
+        }
+    };
+}
 function parse (name, input, offset, transform, continuation) {
     var alternatives = rules[name];
     if (alternatives === undefined) {
@@ -47,17 +74,7 @@ addRule("dash", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 45) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(45, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -69,17 +86,7 @@ addRule("dot", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 46) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(46, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -91,17 +98,7 @@ addRule("space", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 32) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(32, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -113,17 +110,7 @@ addRule("lf", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 10) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(10, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -135,17 +122,7 @@ addRule("cr", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 13) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(13, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -157,24 +134,8 @@ addRule("newline", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "cr", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "lf", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("cr", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("lf", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -186,24 +147,8 @@ addRule("newline", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "lf", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "cr", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("lf", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("cr", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -215,15 +160,7 @@ addRule("newline", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "lf", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("lf", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -235,24 +172,8 @@ addRule("newlines", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newlines", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newline", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("newline", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -264,24 +185,8 @@ addRule("newlines", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newline", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -304,24 +209,8 @@ addRule("whitespaces", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "space", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("space", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -344,17 +233,7 @@ addRule("numeric", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 48) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(48, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -366,17 +245,7 @@ addRule("numeric", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 49) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(49, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -388,17 +257,7 @@ addRule("numeric", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 50) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(50, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -410,17 +269,7 @@ addRule("numeric", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 51) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(51, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -432,17 +281,7 @@ addRule("numeric", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 52) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(52, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -454,17 +293,7 @@ addRule("numeric", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 53) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(53, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -476,17 +305,7 @@ addRule("numeric", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 54) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(54, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -498,17 +317,7 @@ addRule("numeric", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 55) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(55, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -520,17 +329,7 @@ addRule("numeric", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 56) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(56, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -542,17 +341,7 @@ addRule("numeric", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 57) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(57, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -565,24 +354,8 @@ addRule("number", function (input, offset, transform, continuation) {
         var transformedResults = transform.number_multiple.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "number", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "numeric", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("number", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -595,15 +368,7 @@ addRule("number", function (input, offset, transform, continuation) {
         var transformedResults = transform.number_single.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "numeric", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -615,17 +380,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 65) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(65, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -637,17 +392,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 66) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(66, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -659,17 +404,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 67) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(67, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -681,17 +416,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 68) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(68, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -703,17 +428,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 69) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(69, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -725,17 +440,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 70) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(70, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -747,17 +452,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 71) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(71, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -769,17 +464,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 72) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(72, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -791,17 +476,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 73) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(73, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -813,17 +488,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 74) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(74, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -835,17 +500,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 75) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(75, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -857,17 +512,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 76) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(76, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -879,17 +524,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 77) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(77, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -901,17 +536,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 78) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(78, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -923,17 +548,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 79) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(79, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -945,17 +560,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 80) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(80, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -967,17 +572,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 81) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(81, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -989,17 +584,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 82) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(82, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1011,17 +596,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 83) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(83, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1033,17 +608,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 84) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(84, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1055,17 +620,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 85) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(85, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1077,17 +632,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 86) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(86, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1099,17 +644,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 87) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(87, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1121,17 +656,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 88) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(88, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1143,17 +668,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 89) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(89, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1165,17 +680,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 90) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(90, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1187,17 +692,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 97) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(97, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1209,17 +704,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 98) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(98, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1231,17 +716,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 99) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(99, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1253,17 +728,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 100) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(100, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1275,17 +740,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 101) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(101, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1297,17 +752,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 102) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(102, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1319,17 +764,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 103) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(103, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1341,17 +776,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 104) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(104, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1363,17 +788,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 105) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(105, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1385,17 +800,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 106) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(106, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1407,17 +812,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 107) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(107, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1429,17 +824,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 108) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(108, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1451,17 +836,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 109) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(109, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1473,17 +848,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 110) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(110, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1495,17 +860,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 111) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(111, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1517,17 +872,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 112) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(112, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1539,17 +884,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 113) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(113, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1561,17 +896,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 114) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(114, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1583,17 +908,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 115) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(115, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1605,17 +920,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 116) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(116, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1627,17 +932,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 117) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(117, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1649,17 +944,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 118) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(118, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1671,17 +956,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 119) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(119, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1693,17 +968,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 120) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(120, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1715,17 +980,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 121) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(121, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1737,17 +992,7 @@ addRule("alphabetical", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 122) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
+    continuation = numberParser(122, continuation, returnFromRule, input);
     
     return cont(continuation, [], startOffset);
 });
@@ -1759,15 +1004,7 @@ addRule("alphanumeric", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "numeric", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -1779,15 +1016,7 @@ addRule("alphanumeric", function (input, offset, transform, continuation) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "alphabetical", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -1800,24 +1029,8 @@ addRule("identifier", function (input, offset, transform, continuation) {
         var transformedResults = transform.identifier_multiple.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "identifierRest", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "alphabetical", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("identifierRest", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -1830,15 +1043,7 @@ addRule("identifier", function (input, offset, transform, continuation) {
         var transformedResults = transform.identifier_single.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "alphabetical", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -1851,24 +1056,8 @@ addRule("identifierRest", function (input, offset, transform, continuation) {
         var transformedResults = transform.identifierRest_multiple.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "identifierRest", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "alphanumeric", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("identifierRest", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("alphanumeric", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -1881,15 +1070,7 @@ addRule("identifierRest", function (input, offset, transform, continuation) {
         var transformedResults = transform.identifierRest_single.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "alphanumeric", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("alphanumeric", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -1902,42 +1083,10 @@ addRule("grammar", function (input, offset, transform, continuation) {
         var transformedResults = transform.grammar_multiple.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "grammar", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newlines", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "rule", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newlines", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("rule", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -1950,33 +1099,9 @@ addRule("grammar", function (input, offset, transform, continuation) {
         var transformedResults = transform.grammar_single.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newlines", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "rule", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newlines", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("rule", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -1989,60 +1114,12 @@ addRule("rule", function (input, offset, transform, continuation) {
         var transformedResults = transform.rule_withSuffix.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newline", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "suffix", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "parts", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "identifier", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("suffix", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("parts", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -2055,51 +1132,11 @@ addRule("rule", function (input, offset, transform, continuation) {
         var transformedResults = transform.rule_withoutSuffix.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newline", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "parts", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "identifier", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("parts", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -2112,24 +1149,8 @@ addRule("suffix", function (input, offset, transform, continuation) {
         var transformedResults = transform.suffix_suffix.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "identifier", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "dash", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("dash", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -2142,33 +1163,9 @@ addRule("parts", function (input, offset, transform, continuation) {
         var transformedResults = transform.parts_multiple.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "parts", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "part", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("parts", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("part", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -2181,15 +1178,7 @@ addRule("parts", function (input, offset, transform, continuation) {
         var transformedResults = transform.parts_single.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "part", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("part", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -2214,15 +1203,7 @@ addRule("part", function (input, offset, transform, continuation) {
         var transformedResults = transform.part_identifier.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "identifier", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -2235,15 +1216,7 @@ addRule("part", function (input, offset, transform, continuation) {
         var transformedResults = transform.part_number.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "number", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("number", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -2256,15 +1229,7 @@ addRule("part", function (input, offset, transform, continuation) {
         var transformedResults = transform.part_eof.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "dot", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = identifierParser("dot", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -2277,25 +1242,8 @@ addRule("start", function (input, offset, transform, continuation) {
         var transformedResults = transform.start_start.apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
     };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (offset === input.length) {
-                return cont(continuation, items.concat([{result: null, start: offset, end: offset}]), offset);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "grammar", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
+    continuation = eofParser(continuation, returnFromRule, input);
+        continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);
     
     return cont(continuation, [], startOffset);
 });
@@ -2324,42 +1272,15 @@ transform.identifierRest_multiple = function (a, b) {
     return '' + a + '' + b + '';
 };
 transform.part_number = function (number) {
-    return '    \n\
-    continuation = (function (continuation) {\n\
-        return function (items, offset) {\n\
-            if (input.charCodeAt(offset) === ' + number + ') {\n\
-                var result = {result: input[offset], start: offset, end: offset + 1};\n\
-                return cont(continuation, items.concat([result]), offset + 1);\n\
-            } else {\n\
-                return cont(returnFromRule, null);\n\
-            }\n\
-        };\n\
-    }(continuation));\n\
+    return '    continuation = numberParser(' + number + ', continuation, returnFromRule, input);\n\
     ';
 };
 transform.part_identifier = function (identifier) {
-    return '    \n\
-    continuation = (function (continuation) {\n\
-        return function (items, offset) {\n\
-            return cont(parse, "' + identifier + '", input, offset, transform, function (result) {\n\
-                if (result === null) { return cont(returnFromRule, null); }\n\
-                return cont(continuation, items.concat([result]), result.end);\n\
-            });\n\
-        };\n\
-    }(continuation));\n\
+    return '    continuation = identifierParser("' + identifier + '", continuation, returnFromRule, input, transform);\n\
     ';
 };
 transform.part_eof = function () {
-    return '    \n\
-    continuation = (function (continuation) {\n\
-        return function (items, offset) {\n\
-            if (offset === input.length) {\n\
-                return cont(continuation, items.concat([{result: null, start: offset, end: offset}]), offset);\n\
-            } else {\n\
-                return cont(returnFromRule, null);\n\
-            }\n\
-        };\n\
-    }(continuation));\n\
+    return '    continuation = eofParser(continuation, returnFromRule, input);\n\
     ';
 };
 transform.parts_single = function (n) {
@@ -2445,6 +1366,33 @@ function match (alternatives, input, offset, transform, continuation) {\n\
             return cont(match, alternatives.slice(1), input, offset, transform, continuation);\n\
         });\n\
     }\n\
+}\n\
+function numberParser (number, continuation, returnFromRule, input) {\n\
+    return function (items, offset) {\n\
+        if (input.charCodeAt(offset) === number) {\n\
+            var result = {result: input[offset], start: offset, end: offset + 1};\n\
+            return cont(continuation, items.concat([result]), offset + 1);\n\
+        } else {\n\
+            return cont(returnFromRule, null);\n\
+        }\n\
+    };\n\
+}\n\
+function identifierParser (identifier, continuation, returnFromRule, input, transform) {\n\
+    return function (items, offset) {\n\
+        return cont(parse, identifier, input, offset, transform, function (result) {\n\
+            if (result === null) { return cont(returnFromRule, null); }\n\
+            return cont(continuation, items.concat([result]), result.end);\n\
+        });\n\
+    };\n\
+}\n\
+function eofParser (continuation, returnFromRule, input) {\n\
+    return function (items, offset) {\n\
+        if (offset === input.length) {\n\
+            return cont(continuation, items.concat([{result: null, start: offset, end: offset}]), offset);\n\
+        } else {\n\
+            return cont(returnFromRule, null);\n\
+        }\n\
+    };\n\
 }\n\
 function parse (name, input, offset, transform, continuation) {\n\
     var alternatives = rules[name];\n\

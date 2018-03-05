@@ -842,9 +842,6 @@ transform.grammar_multiple = function (_, rule, _, rest) {
     return '' + rule + '' + rest + '';
 };
 transform.start_start = function (grammar, _) {
-    return '' + grammar + '';
-};
-var transformer = function (result) {
     return 'var slice = Array.prototype.slice;\n\
 function cont (f) {\n\
     var args = arguments;\n\
@@ -927,12 +924,12 @@ function parse (name, input, offset, transform, continuation) {\n\
     }\n\
     return cont(match, alternatives, input, offset, transform, continuation);\n\
 }\n\
-' + result + '\n\
+' + grammar + '\n\
 module.exports.parse = function (input, transform) {\n\
     return trampoline(cont(parse, \'start\', input, 0, transform, identity));\n\
 };';
 };
 var fs = require('fs');
 var input = fs.readFileSync(process.argv[2], 'utf8');
-var output = transformer(module.exports.parse(input, transform).result);
+var output = module.exports.parse(input, transform).result;
 fs.writeFileSync(process.argv[3], output, 'utf8');

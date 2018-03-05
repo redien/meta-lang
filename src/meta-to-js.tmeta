@@ -65,9 +65,6 @@ grammar-multiple _ rule _ rest
     <% rule %><% rest %>
 
 start-start grammar _
-    <% grammar %>
-
-result
     var slice = Array.prototype.slice;
     function cont (f) {
         var args = arguments;
@@ -150,7 +147,7 @@ result
         }
         return cont(match, alternatives, input, offset, transform, continuation);
     }
-    <% result %>
+    <% grammar %>
     module.exports.parse = function (input, transform) {
         return trampoline(cont(parse, 'start', input, 0, transform, identity));
     };

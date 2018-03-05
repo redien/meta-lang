@@ -363,11 +363,8 @@ parameter underscore
 parameters parameter whitespaces parameters  -multiple
 parameters                                   -none
 
-result 114 101 115 117 108 116
-
 rule name whitespaces parameters whitespaces newline ruleLines  -rule
 rule name whitespaces parameters whitespaces newline            -empty
-rule result whitespaces newline ruleLines                       -result
 
 template newlines rule template  -multiple
 template newlines rule           -single

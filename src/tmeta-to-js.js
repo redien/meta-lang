@@ -62,12 +62,6 @@ transform.${name} = function (${parameters.join(', ')}) {
     return '';
 };`;
 };
-transform.rule_result = function (_, __, ___, lines) {
-    return `
-var transformer = function (result) {
-    return '${lines.replace(/<% result %>/g, "' + result + '")}';
-};`;
-};
 
 transform.start_start = function (template, _) {
     return template;
@@ -86,7 +80,7 @@ var transform = {};
 ${result.result}
 var fs = require('fs');
 var input = fs.readFileSync(process.argv[2], 'utf8');
-var output = transformer(module.exports.parse(input, transform).result);
+var output = module.exports.parse(input, transform).result;
 fs.writeFileSync(process.argv[3], output, 'utf8');
 `;
 

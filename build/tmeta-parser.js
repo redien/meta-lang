@@ -2527,18 +2527,6 @@ addRule("parameters", function (input, offset, transform, continuation) {
     return cont(continuation, [], offset);
 });
 
-addRule("result", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(116, continuation, returnFromRule, input);
-    continuation = numberParser(108, continuation, returnFromRule, input);
-    continuation = numberParser(117, continuation, returnFromRule, input);
-    continuation = numberParser(115, continuation, returnFromRule, input);
-    continuation = numberParser(101, continuation, returnFromRule, input);
-    continuation = numberParser(114, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
 addRule("rule", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("rule_rule", returnFromRule, offset, transform);
@@ -2559,16 +2547,6 @@ addRule("rule", function (input, offset, transform, continuation) {
     continuation = identifierParser("parameters", continuation, returnFromRule, input, transform);
     continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
     continuation = identifierParser("name", continuation, returnFromRule, input, transform);
-    return cont(continuation, [], offset);
-});
-
-addRule("rule", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("rule_result", returnFromRule, offset, transform);
-    continuation = identifierParser("ruleLines", continuation, returnFromRule, input, transform);
-    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);
-    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
-    continuation = identifierParser("result", continuation, returnFromRule, input, transform);
     return cont(continuation, [], offset);
 });
 

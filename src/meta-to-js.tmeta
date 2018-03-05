@@ -19,15 +19,15 @@ identifierRest-multiple a b
 
 part-number number
         continuation = numberParser(<% number %>, continuation, returnFromRule, input);
-        
+    
 
 part-identifier identifier
         continuation = identifierParser("<% identifier %>", continuation, returnFromRule, input, transform);
-        
+
 
 part-eof
         continuation = eofParser(continuation, returnFromRule, input);
-        
+    
 
 parts-single n
     <% n %>
@@ -42,10 +42,7 @@ rule-withoutSuffix name _ parts _ _
     addRule("<% name %>", function (input, offset, transform, continuation) {
         var returnFromRule = continuation;
         var startOffset = offset;
-        continuation = function (items, offset) {
-            var results = items.map(function (i) { return i.result; });
-            return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-        };
+        continuation = initialContinuation(returnFromRule, offset);
     <% parts %>
         return cont(continuation, [], startOffset);
     });
@@ -56,11 +53,7 @@ rule-withSuffix name _ parts _ suffix _
     addRule("<% name %>", function (input, offset, transform, continuation) {
         var returnFromRule = continuation;
         var startOffset = offset;
-        continuation = function (items, offset) {
-            var results = items.map(function (i) { return i.result; });
-            var transformedResults = transform.<% name %>_<% suffix %>.apply(null, results);
-            return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-        };
+        continuation = initialSuffixContinuation("<% name %>_<% suffix %>", returnFromRule, offset, transform);
     <% parts %>
         return cont(continuation, [], startOffset);
     });
@@ -137,6 +130,21 @@ result
             } else {
                 return cont(returnFromRule, null);
             }
+        };
+    }
+    
+    function initialContinuation (returnFromRule, startOffset) {
+        return function (items, offset) {
+            var results = items.map(function (i) { return i.result; });
+            return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+        };
+    }
+    
+    function initialSuffixContinuation (transformer, returnFromRule, startOffset, transform) {
+        return function (items, offset) {
+            var results = items.map(function (i) { return i.result; });
+            var transformedResults = transform[transformer].apply(null, results);
+            return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
         };
     }
     function parse (name, input, offset, transform, continuation) {

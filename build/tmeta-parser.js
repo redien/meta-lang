@@ -31,6 +31,48 @@ function match (alternatives, input, offset, transform, continuation) {
         });
     }
 }
+function numberParser (number, continuation, returnFromRule, input) {
+    return function (items, offset) {
+        if (input.charCodeAt(offset) === number) {
+            var result = {result: input[offset], start: offset, end: offset + 1};
+            return cont(continuation, items.concat([result]), offset + 1);
+        } else {
+            return cont(returnFromRule, null);
+        }
+    };
+}
+function identifierParser (identifier, continuation, returnFromRule, input, transform) {
+    return function (items, offset) {
+        return cont(parse, identifier, input, offset, transform, function (result) {
+            if (result === null) { return cont(returnFromRule, null); }
+            return cont(continuation, items.concat([result]), result.end);
+        });
+    };
+}
+function eofParser (continuation, returnFromRule, input) {
+    return function (items, offset) {
+        if (offset === input.length) {
+            return cont(continuation, items.concat([{result: null, start: offset, end: offset}]), offset);
+        } else {
+            return cont(returnFromRule, null);
+        }
+    };
+}
+
+function initialContinuation (returnFromRule, startOffset) {
+    return function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
+}
+
+function initialSuffixContinuation (transformer, returnFromRule, startOffset, transform) {
+    return function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform[transformer].apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
+}
 function parse (name, input, offset, transform, continuation) {
     var alternatives = rules[name];
     if (alternatives === undefined) {
@@ -42,256 +84,92 @@ function parse (name, input, offset, transform, continuation) {
 addRule("underscore", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 95) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(95, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("dash", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 45) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(45, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("space", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 32) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(32, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("lf", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 10) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(10, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("cr", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 13) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(13, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("newline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "cr", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "lf", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("cr", continuation, returnFromRule, input, transform);    continuation = identifierParser("lf", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("newline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "lf", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "cr", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("lf", continuation, returnFromRule, input, transform);    continuation = identifierParser("cr", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("newline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "lf", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("lf", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("newlines", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newlines", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newline", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("newlines", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newline", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("newlines", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
+    continuation = initialContinuation(returnFromRule, offset);
 
     return cont(continuation, [], startOffset);
 });
@@ -299,39 +177,15 @@ addRule("newlines", function (input, offset, transform, continuation) {
 addRule("whitespaces", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "space", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("space", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("whitespaces", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
+    continuation = initialContinuation(returnFromRule, offset);
 
     return cont(continuation, [], startOffset);
 });
@@ -339,7272 +193,2939 @@ addRule("whitespaces", function (input, offset, transform, continuation) {
 addRule("numeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 48) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(48, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("numeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 49) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(49, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("numeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 50) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(50, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("numeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 51) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(51, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("numeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 52) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(52, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("numeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 53) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(53, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("numeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 54) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(54, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("numeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 55) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(55, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("numeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 56) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(56, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("numeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 57) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(57, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("number", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.number_multiple.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "number", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "numeric", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("number_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("number", continuation, returnFromRule, input, transform);    continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("number", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.number_single.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "numeric", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("number_single", returnFromRule, offset, transform);
+    continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 65) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(65, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 66) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(66, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 67) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(67, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 68) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(68, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 69) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(69, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 70) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(70, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 71) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(71, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 72) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(72, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 73) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(73, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 74) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(74, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 75) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(75, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 76) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(76, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 77) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(77, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 78) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(78, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 79) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(79, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 80) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(80, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 81) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(81, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 82) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(82, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 83) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(83, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 84) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(84, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 85) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(85, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 86) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(86, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 87) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(87, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 88) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(88, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 89) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(89, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 90) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(90, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 97) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(97, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 98) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(98, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 99) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(99, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 100) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(100, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 101) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(101, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 102) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(102, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 103) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(103, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 104) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(104, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 105) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(105, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 106) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(106, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 107) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(107, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 108) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(108, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 109) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(109, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 110) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(110, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 111) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(111, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 112) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(112, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 113) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(113, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 114) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(114, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 115) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(115, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 116) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(116, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 117) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(117, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 118) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(118, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 119) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(119, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 120) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(120, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 121) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(121, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 122) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(122, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphanumeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "numeric", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("alphanumeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "alphabetical", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 0) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(0, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 1) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(1, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 2) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(2, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 3) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(3, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 4) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(4, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 5) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(5, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 6) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(6, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 7) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(7, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 8) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(8, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 9) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(9, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 11) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(11, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 12) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(12, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 14) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(14, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 15) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(15, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 16) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(16, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 17) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(17, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 18) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(18, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 19) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(19, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 20) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(20, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 21) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(21, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 22) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(22, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 23) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(23, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 24) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(24, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 25) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(25, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 26) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(26, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 27) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(27, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 28) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(28, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 29) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(29, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 30) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(30, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 31) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(31, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 32) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(32, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 33) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(33, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 34) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(34, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 35) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(35, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 36) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(36, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 37) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(37, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 38) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(38, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 39) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(39, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 40) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(40, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 41) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(41, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 42) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(42, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 43) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(43, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 44) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(44, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 45) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(45, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 46) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(46, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 47) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(47, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 48) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(48, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 49) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(49, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 50) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(50, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 51) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(51, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 52) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(52, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 53) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(53, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 54) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(54, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 55) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(55, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 56) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(56, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 57) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(57, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 58) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(58, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 59) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(59, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 60) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(60, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 61) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(61, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 62) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(62, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 63) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(63, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 64) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(64, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 65) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(65, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 66) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(66, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 67) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(67, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 68) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(68, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 69) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(69, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 70) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(70, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 71) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(71, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 72) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(72, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 73) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(73, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 74) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(74, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 75) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(75, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 76) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(76, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 77) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(77, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 78) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(78, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 79) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(79, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 80) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(80, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 81) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(81, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 82) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(82, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 83) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(83, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 84) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(84, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 85) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(85, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 86) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(86, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 87) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(87, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 88) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(88, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 89) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(89, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 90) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(90, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 91) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(91, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 92) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(92, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 93) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(93, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 94) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(94, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 95) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(95, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 96) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(96, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 97) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(97, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 98) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(98, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 99) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(99, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 100) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(100, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 101) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(101, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 102) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(102, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 103) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(103, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 104) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(104, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 105) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(105, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 106) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(106, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 107) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(107, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 108) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(108, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 109) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(109, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 110) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(110, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 111) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(111, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 112) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(112, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 113) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(113, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 114) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(114, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 115) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(115, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 116) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(116, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 117) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(117, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 118) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(118, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 119) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(119, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 120) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(120, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 121) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(121, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 122) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(122, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 123) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(123, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 124) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(124, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 125) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(125, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 126) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(126, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 127) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(127, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 128) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(128, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 129) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(129, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 130) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(130, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 131) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(131, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 132) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(132, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 133) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(133, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 134) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(134, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 135) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(135, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 136) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(136, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 137) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(137, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 138) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(138, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 139) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(139, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 140) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(140, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 141) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(141, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 142) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(142, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 143) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(143, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 144) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(144, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 145) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(145, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 146) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(146, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 147) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(147, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 148) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(148, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 149) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(149, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 150) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(150, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 151) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(151, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 152) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(152, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 153) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(153, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 154) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(154, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 155) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(155, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 156) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(156, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 157) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(157, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 158) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(158, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 159) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(159, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 160) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(160, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 161) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(161, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 162) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(162, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 163) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(163, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 164) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(164, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 165) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(165, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 166) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(166, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 167) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(167, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 168) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(168, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 169) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(169, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 170) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(170, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 171) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(171, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 172) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(172, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 173) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(173, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 174) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(174, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 175) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(175, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 176) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(176, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 177) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(177, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 178) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(178, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 179) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(179, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 180) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(180, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 181) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(181, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 182) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(182, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 183) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(183, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 184) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(184, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 185) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(185, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 186) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(186, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 187) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(187, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 188) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(188, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 189) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(189, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 190) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(190, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 191) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(191, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 192) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(192, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 193) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(193, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 194) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(194, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 195) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(195, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 196) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(196, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 197) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(197, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 198) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(198, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 199) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(199, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 200) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(200, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 201) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(201, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 202) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(202, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 203) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(203, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 204) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(204, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 205) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(205, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 206) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(206, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 207) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(207, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 208) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(208, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 209) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(209, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 210) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(210, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 211) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(211, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 212) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(212, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 213) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(213, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 214) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(214, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 215) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(215, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 216) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(216, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 217) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(217, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 218) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(218, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 219) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(219, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 220) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(220, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 221) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(221, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 222) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(222, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 223) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(223, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 224) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(224, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 225) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(225, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 226) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(226, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 227) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(227, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 228) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(228, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 229) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(229, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 230) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(230, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 231) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(231, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 232) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(232, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 233) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(233, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 234) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(234, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 235) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(235, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 236) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(236, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 237) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(237, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 238) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(238, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 239) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(239, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 240) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(240, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 241) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(241, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 242) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(242, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 243) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(243, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 244) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(244, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 245) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(245, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 246) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(246, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 247) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(247, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 248) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(248, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 249) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(249, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 250) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(250, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 251) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(251, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 252) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(252, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 253) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(253, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 254) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(254, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("notNewline", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 255) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(255, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("identifier", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.identifier_multiple.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "identifierRest", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "alphabetical", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("identifier_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("identifierRest", continuation, returnFromRule, input, transform);    continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("identifier", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.identifier_single.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "alphabetical", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("identifier_single", returnFromRule, offset, transform);
+    continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("identifierRest", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.identifierRest_multiple.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "identifierRest", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "alphanumeric", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("identifierRest_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("identifierRest", continuation, returnFromRule, input, transform);    continuation = identifierParser("alphanumeric", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("identifierRest", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.identifierRest_single.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "alphanumeric", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("identifierRest_single", returnFromRule, offset, transform);
+    continuation = identifierParser("alphanumeric", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("name", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.name_name.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "identifier", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "dash", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "identifier", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("name_name", returnFromRule, offset, transform);
+    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);    continuation = identifierParser("dash", continuation, returnFromRule, input, transform);    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("fourSpaces", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "space", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "space", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "space", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "space", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("space", continuation, returnFromRule, input, transform);    continuation = identifierParser("space", continuation, returnFromRule, input, transform);    continuation = identifierParser("space", continuation, returnFromRule, input, transform);    continuation = identifierParser("space", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("text", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.text_multiple.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "text", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "notNewline", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("text_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("text", continuation, returnFromRule, input, transform);    continuation = identifierParser("notNewline", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("text", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.text_none.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
+    continuation = initialSuffixContinuation("text_none", returnFromRule, offset, transform);
 
     return cont(continuation, [], startOffset);
 });
@@ -7612,177 +3133,47 @@ addRule("text", function (input, offset, transform, continuation) {
 addRule("ruleLines", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.ruleLines_multiple.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "ruleLines", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newline", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "text", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "fourSpaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("ruleLines_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("ruleLines", continuation, returnFromRule, input, transform);    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);    continuation = identifierParser("text", continuation, returnFromRule, input, transform);    continuation = identifierParser("fourSpaces", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("ruleLines", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.ruleLines_single.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newline", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "text", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "fourSpaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("ruleLines_single", returnFromRule, offset, transform);
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);    continuation = identifierParser("text", continuation, returnFromRule, input, transform);    continuation = identifierParser("fourSpaces", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("parameter", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "identifier", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("parameter", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "underscore", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("underscore", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("parameters", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.parameters_multiple.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "parameters", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "parameter", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("parameters_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("parameters", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("parameter", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("parameters", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.parameters_none.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
+    continuation = initialSuffixContinuation("parameters_none", returnFromRule, offset, transform);
 
     return cont(continuation, [], startOffset);
 });
@@ -7790,357 +3181,63 @@ addRule("parameters", function (input, offset, transform, continuation) {
 addRule("result", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 116) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 108) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 117) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 115) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 101) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === 114) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-    
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(116, continuation, returnFromRule, input);
+    continuation = numberParser(108, continuation, returnFromRule, input);
+    continuation = numberParser(117, continuation, returnFromRule, input);
+    continuation = numberParser(115, continuation, returnFromRule, input);
+    continuation = numberParser(101, continuation, returnFromRule, input);
+    continuation = numberParser(114, continuation, returnFromRule, input);
+
     return cont(continuation, [], startOffset);
 });
 
 addRule("rule", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.rule_rule.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "ruleLines", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newline", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "parameters", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "name", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("rule_rule", returnFromRule, offset, transform);
+    continuation = identifierParser("ruleLines", continuation, returnFromRule, input, transform);    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("parameters", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("name", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("rule", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.rule_empty.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newline", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "parameters", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "name", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("rule_empty", returnFromRule, offset, transform);
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("parameters", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("name", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("rule", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.rule_result.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "ruleLines", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newline", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "whitespaces", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "result", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("rule_result", returnFromRule, offset, transform);
+    continuation = identifierParser("ruleLines", continuation, returnFromRule, input, transform);    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("result", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("template", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.template_multiple.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "template", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "rule", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newlines", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("template_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("template", continuation, returnFromRule, input, transform);    continuation = identifierParser("rule", continuation, returnFromRule, input, transform);    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("template", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.template_single.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "rule", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newlines", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("template_single", returnFromRule, offset, transform);
+    continuation = identifierParser("rule", continuation, returnFromRule, input, transform);    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 
 addRule("start", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     var startOffset = offset;
-    continuation = function (items, offset) {
-        var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform.start_start.apply(null, results);
-        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
-    };
-    
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            if (offset === input.length) {
-                return cont(continuation, items.concat([{result: null, start: offset, end: offset}]), offset);
-            } else {
-                return cont(returnFromRule, null);
-            }
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "newlines", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-        
-    continuation = (function (continuation) {
-        return function (items, offset) {
-            return cont(parse, "template", input, offset, transform, function (result) {
-                if (result === null) { return cont(returnFromRule, null); }
-                return cont(continuation, items.concat([result]), result.end);
-            });
-        };
-    }(continuation));
-    
+    continuation = initialSuffixContinuation("start_start", returnFromRule, offset, transform);
+    continuation = eofParser(continuation, returnFromRule, input);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);    continuation = identifierParser("template", continuation, returnFromRule, input, transform);
     return cont(continuation, [], startOffset);
 });
 

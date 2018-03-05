@@ -1,1464 +1,914 @@
-const parser = {rule: {}};
-parser.add = function (name, parseFunction) {
-    let rule = parser.rule[name];
+var slice = Array.prototype.slice;
+function cont (f) {
+    var args = arguments;
+    var thunk = function () { return f.apply(null, slice.call(args, 1)); }
+    thunk.isThunk = true;
+    return thunk;
+}
+function identity (x) { return x; }
+function trampoline (thunk) {
+    while (thunk && thunk.isThunk) {
+        thunk = thunk();
+    }
+    return thunk;
+}
+var rules = {};
+function addRule (name, parseFunction) {
+    let rule = rules[name];
     if (rule === undefined) {
         rule = []; 
-        parser.rule[name] = rule;
-    }   
-    
+        rules[name] = rule;
+    }
     rule.push(parseFunction);
 };
+function match (alternatives, input, offset, transform, continuation) {
+    if (alternatives.length === 0) {
+        return cont(continuation, null);
+    } else {
+        return cont(alternatives[0], input, offset, transform, function (result) {
+            if (result !== null) { return cont(continuation, result); }
+            return cont(match, alternatives.slice(1), input, offset, transform, continuation);
+        });
+    }
+}
+function numberParser (number, continuation, returnFromRule, input) {
+    return function (items, offset) {
+        if (input.charCodeAt(offset) === number) {
+            var result = {result: input[offset], start: offset, end: offset + 1};
+            return cont(continuation, items.concat([result]), offset + 1);
+        } else {
+            return cont(returnFromRule, null);
+        }
+    };
+}
+function identifierParser (identifier, continuation, returnFromRule, input, transform) {
+    return function (items, offset) {
+        return cont(parse, identifier, input, offset, transform, function (result) {
+            if (result === null) { return cont(returnFromRule, null); }
+            return cont(continuation, items.concat([result]), result.end);
+        });
+    };
+}
+function eofParser (continuation, returnFromRule, input) {
+    return function (items, offset) {
+        if (offset === input.length) {
+            return cont(continuation, items.concat([{result: null, start: offset, end: offset}]), offset);
+        } else {
+            return cont(returnFromRule, null);
+        }
+    };
+}
 
-parser.parse = function (name, input, offset, transform) {
-    var alternatives = parser.rule[name];
+function initialContinuation (returnFromRule, startOffset) {
+    return function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+    };
+}
+
+function initialSuffixContinuation (transformer, returnFromRule, startOffset, transform) {
+    return function (items, offset) {
+        var results = items.map(function (i) { return i.result; });
+        var transformedResults = transform[transformer].apply(null, results);
+        return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+    };
+}
+function parse (name, input, offset, transform, continuation) {
+    var alternatives = rules[name];
     if (alternatives === undefined) {
         throw new Error('Unknown rule ' + name);
-    }   
-    
-    for (var i = 0; i < alternatives.length; ++i) {
-        var alternative = alternatives[i];
-        const result = alternative(input, offset, transform);
-        if (result !== null) { return result; }
-    }   
-    
-    return null;
-};
-
-parser.add("dash", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 45) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
     }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("dot", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 46) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("space", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 32) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("lf", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 10) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("cr", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 13) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("newline", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("lf", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("cr", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
+    return cont(match, alternatives, input, offset, transform, continuation);
+}
 
-parser.add("newline", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("cr", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("lf", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("newline", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("lf", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("newlines", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("newline", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("newlines", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("newlines", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("newline", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("newlines", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("whitespaces", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("space", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("whitespaces", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 48) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 49) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 50) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 51) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 52) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 53) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 54) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 55) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 56) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("numeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 57) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("number", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("numeric", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("number", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.number_multiple.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("number", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("numeric", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.number_single.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 65) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 66) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 67) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 68) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 69) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 70) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 71) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 72) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 73) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 74) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 75) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 76) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 77) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 78) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 79) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 80) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 81) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 82) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 83) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 84) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 85) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 86) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 87) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 88) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 89) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 90) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 97) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 98) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 99) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 100) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 101) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 102) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 103) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 104) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 105) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 106) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 107) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 108) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 109) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 110) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 111) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 112) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 113) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 114) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 115) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 116) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 117) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 118) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 119) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 120) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 121) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphabetical", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    if (input.charCodeAt(offset) === 122) {
-        parsed.push({result: input[offset], start: offset, end: offset + 1});
-        offset += 1;
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphanumeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("numeric", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("alphanumeric", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("alphabetical", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: parsedResults, start: startOffset, end: offset};
-});
-
-parser.add("identifier", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("alphabetical", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("identifierRest", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.identifier_multiple.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("identifier", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("alphabetical", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.identifier_single.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("identifierRest", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("alphanumeric", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("identifierRest", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.identifierRest_multiple.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("identifierRest", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("alphanumeric", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.identifierRest_single.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("grammar", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("newlines", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("rule", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("newlines", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("grammar", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.grammar_multiple.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("grammar", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("newlines", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("rule", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("newlines", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.grammar_single.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("rule", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("identifier", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("parts", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("suffix", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("newline", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.rule_withSuffix.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("rule", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("identifier", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("parts", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("newline", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.rule_withoutSuffix.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("suffix", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("dash", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("identifier", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.suffix_suffix.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("parts", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("part", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("whitespaces", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    parsed.push(parser.parse("parts", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.parts_multiple.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("parts", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("part", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.parts_single.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("parts", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.parts_none.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("part", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("identifier", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.part_identifier.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("part", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("number", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.part_number.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("part", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("dot", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.part_eof.apply(null, parsedResults), start: startOffset, end: offset};
-});
-
-parser.add("start", function (input, offset, transform) {
-    const parsed = [];
-    const startOffset = offset;
-    
-    parsed.push(parser.parse("grammar", input, offset, transform));
-    if (parsed[parsed.length - 1] === null) { return null; }
-    offset = parsed[parsed.length - 1].end;
-        
-    if (offset === input.length) {
-        parsed.push({result: null, start: offset, end: offset});
-    } else {
-        return null;
-    }
-    
-    const parsedResults = parsed.map(function (p) { return p.result; });
-    return {result: transform.start_start.apply(null, parsedResults), start: startOffset, end: offset};
+addRule("dash", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(45, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("dot", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(46, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("space", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(32, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("lf", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(10, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("cr", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(13, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("newline", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("cr", continuation, returnFromRule, input, transform);    continuation = identifierParser("lf", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("newline", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("lf", continuation, returnFromRule, input, transform);    continuation = identifierParser("cr", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("newline", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("lf", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("newlines", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("newlines", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("newlines", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("whitespaces", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("space", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("whitespaces", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(48, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(49, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(50, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(51, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(52, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(53, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(54, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(55, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(56, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("numeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(57, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("number", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("number_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("number", continuation, returnFromRule, input, transform);    continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("number", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("number_single", returnFromRule, offset, transform);
+    continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(65, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(66, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(67, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(68, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(69, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(70, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(71, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(72, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(73, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(74, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(75, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(76, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(77, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(78, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(79, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(80, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(81, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(82, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(83, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(84, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(85, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(86, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(87, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(88, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(89, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(90, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(97, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(98, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(99, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(100, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(101, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(102, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(103, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(104, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(105, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(106, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(107, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(108, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(109, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(110, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(111, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(112, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(113, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(114, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(115, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(116, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(117, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(118, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(119, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(120, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(121, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphabetical", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = numberParser(122, continuation, returnFromRule, input);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphanumeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("numeric", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("alphanumeric", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialContinuation(returnFromRule, offset);
+    continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("identifier", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("identifier_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("identifierRest", continuation, returnFromRule, input, transform);    continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("identifier", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("identifier_single", returnFromRule, offset, transform);
+    continuation = identifierParser("alphabetical", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("identifierRest", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("identifierRest_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("identifierRest", continuation, returnFromRule, input, transform);    continuation = identifierParser("alphanumeric", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("identifierRest", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("identifierRest_single", returnFromRule, offset, transform);
+    continuation = identifierParser("alphanumeric", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("grammar", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("grammar_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);    continuation = identifierParser("rule", continuation, returnFromRule, input, transform);    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("grammar", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("grammar_single", returnFromRule, offset, transform);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);    continuation = identifierParser("rule", continuation, returnFromRule, input, transform);    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("rule", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("rule_withSuffix", returnFromRule, offset, transform);
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);    continuation = identifierParser("suffix", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("parts", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("rule", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("rule_withoutSuffix", returnFromRule, offset, transform);
+    continuation = identifierParser("newline", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("parts", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("suffix", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("suffix_suffix", returnFromRule, offset, transform);
+    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);    continuation = identifierParser("dash", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("parts", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("parts_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("parts", continuation, returnFromRule, input, transform);    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);    continuation = identifierParser("part", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("parts", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("parts_single", returnFromRule, offset, transform);
+    continuation = identifierParser("part", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("parts", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("parts_none", returnFromRule, offset, transform);
+
+    return cont(continuation, [], startOffset);
+});
+
+addRule("part", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("part_identifier", returnFromRule, offset, transform);
+    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("part", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("part_number", returnFromRule, offset, transform);
+    continuation = identifierParser("number", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("part", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("part_eof", returnFromRule, offset, transform);
+    continuation = identifierParser("dot", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
+});
+
+addRule("start", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    var startOffset = offset;
+    continuation = initialSuffixContinuation("start_start", returnFromRule, offset, transform);
+    continuation = eofParser(continuation, returnFromRule, input);
+    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], startOffset);
 });
 
 module.exports.parse = function (input, transform) {
-    return parser.parse('start', input, 0, transform);
+    return trampoline(cont(parse, 'start', input, 0, transform, identity));
 };

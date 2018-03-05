@@ -21,6 +21,10 @@ part-number number
         continuation = numberParser(<% number %>, continuation, returnFromRule, input);
     
 
+part-range from _ to
+        continuation = rangeParser(<% from %>, <% to %>, continuation, returnFromRule, input);
+    
+
 part-identifier identifier
         continuation = identifierParser("<% identifier %>", continuation, returnFromRule, input, transform);
     
@@ -101,6 +105,17 @@ start-start grammar _
     function numberParser (number, continuation, returnFromRule, input) {
         return function (items, offset) {
             if (input.charCodeAt(offset) === number) {
+                var result = {result: input[offset], start: offset, end: offset + 1};
+                return cont(continuation, items.concat([result]), offset + 1);
+            } else {
+                return cont(returnFromRule, null);
+            }
+        };
+    }
+    function rangeParser (from, to, continuation, returnFromRule, input) {
+        return function (items, offset) {
+            var code = input.charCodeAt(offset);
+            if (code >= from && code <= to) {
                 var result = {result: input[offset], start: offset, end: offset + 1};
                 return cont(continuation, items.concat([result]), offset + 1);
             } else {

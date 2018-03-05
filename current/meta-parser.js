@@ -41,6 +41,17 @@ function numberParser (number, continuation, returnFromRule, input) {
         }
     };
 }
+function rangeParser (from, to, continuation, returnFromRule, input) {
+    return function (items, offset) {
+        var code = input.charCodeAt(offset);
+        if (code >= from && code <= to) {
+            var result = {result: input[offset], start: offset, end: offset + 1};
+            return cont(continuation, items.concat([result]), offset + 1);
+        } else {
+            return cont(returnFromRule, null);
+        }
+    };
+}
 function identifierParser (identifier, continuation, returnFromRule, input, transform) {
     return function (items, offset) {
         return cont(parse, identifier, input, offset, transform, function (result) {
@@ -178,70 +189,7 @@ addRule("whitespaces", function (input, offset, transform, continuation) {
 addRule("numeric", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(48, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("numeric", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(49, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("numeric", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(50, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("numeric", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(51, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("numeric", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(52, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("numeric", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(53, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("numeric", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(54, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("numeric", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(55, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("numeric", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(56, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("numeric", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(57, continuation, returnFromRule, input);
+    continuation = rangeParser(48, 57, continuation, returnFromRule, input);
     return cont(continuation, [], offset);
 });
 
@@ -263,364 +211,14 @@ addRule("number", function (input, offset, transform, continuation) {
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(65, continuation, returnFromRule, input);
+    continuation = rangeParser(65, 90, continuation, returnFromRule, input);
     return cont(continuation, [], offset);
 });
 
 addRule("alphabetical", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(66, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(67, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(68, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(69, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(70, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(71, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(72, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(73, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(74, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(75, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(76, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(77, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(78, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(79, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(80, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(81, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(82, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(83, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(84, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(85, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(86, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(87, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(88, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(89, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(90, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(97, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(98, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(99, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(100, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(101, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(102, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(103, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(104, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(105, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(106, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(107, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(108, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(109, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(110, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(111, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(112, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(113, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(114, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(115, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(116, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(117, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(118, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(119, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(120, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(121, continuation, returnFromRule, input);
-    return cont(continuation, [], offset);
-});
-
-addRule("alphabetical", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, offset);
-    continuation = numberParser(122, continuation, returnFromRule, input);
+    continuation = rangeParser(97, 122, continuation, returnFromRule, input);
     return cont(continuation, [], offset);
 });
 
@@ -668,22 +266,63 @@ addRule("identifierRest", function (input, offset, transform, continuation) {
     return cont(continuation, [], offset);
 });
 
-addRule("grammar", function (input, offset, transform, continuation) {
+addRule("part", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("grammar_multiple", returnFromRule, offset, transform);
-    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);
-    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
-    continuation = identifierParser("rule", continuation, returnFromRule, input, transform);
-    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+    continuation = initialSuffixContinuation("part_identifier", returnFromRule, offset, transform);
+    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
     return cont(continuation, [], offset);
 });
 
-addRule("grammar", function (input, offset, transform, continuation) {
+addRule("part", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("grammar_single", returnFromRule, offset, transform);
-    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
-    continuation = identifierParser("rule", continuation, returnFromRule, input, transform);
-    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+    continuation = initialSuffixContinuation("part_range", returnFromRule, offset, transform);
+    continuation = identifierParser("number", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("dash", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("number", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], offset);
+});
+
+addRule("part", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    continuation = initialSuffixContinuation("part_number", returnFromRule, offset, transform);
+    continuation = identifierParser("number", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], offset);
+});
+
+addRule("part", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    continuation = initialSuffixContinuation("part_eof", returnFromRule, offset, transform);
+    continuation = identifierParser("dot", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], offset);
+});
+
+addRule("parts", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    continuation = initialSuffixContinuation("parts_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("parts", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("part", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], offset);
+});
+
+addRule("parts", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    continuation = initialSuffixContinuation("parts_single", returnFromRule, offset, transform);
+    continuation = identifierParser("part", continuation, returnFromRule, input, transform);
+    return cont(continuation, [], offset);
+});
+
+addRule("parts", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    continuation = initialSuffixContinuation("parts_none", returnFromRule, offset, transform);
+    return cont(continuation, [], offset);
+});
+
+addRule("suffix", function (input, offset, transform, continuation) {
+    var returnFromRule = continuation;
+    continuation = initialSuffixContinuation("suffix_suffix", returnFromRule, offset, transform);
+    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("dash", continuation, returnFromRule, input, transform);
     return cont(continuation, [], offset);
 });
 
@@ -710,54 +349,22 @@ addRule("rule", function (input, offset, transform, continuation) {
     return cont(continuation, [], offset);
 });
 
-addRule("suffix", function (input, offset, transform, continuation) {
+addRule("grammar", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("suffix_suffix", returnFromRule, offset, transform);
-    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
-    continuation = identifierParser("dash", continuation, returnFromRule, input, transform);
+    continuation = initialSuffixContinuation("grammar_multiple", returnFromRule, offset, transform);
+    continuation = identifierParser("grammar", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("rule", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
     return cont(continuation, [], offset);
 });
 
-addRule("parts", function (input, offset, transform, continuation) {
+addRule("grammar", function (input, offset, transform, continuation) {
     var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("parts_multiple", returnFromRule, offset, transform);
-    continuation = identifierParser("parts", continuation, returnFromRule, input, transform);
-    continuation = identifierParser("whitespaces", continuation, returnFromRule, input, transform);
-    continuation = identifierParser("part", continuation, returnFromRule, input, transform);
-    return cont(continuation, [], offset);
-});
-
-addRule("parts", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("parts_single", returnFromRule, offset, transform);
-    continuation = identifierParser("part", continuation, returnFromRule, input, transform);
-    return cont(continuation, [], offset);
-});
-
-addRule("parts", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("parts_none", returnFromRule, offset, transform);
-    return cont(continuation, [], offset);
-});
-
-addRule("part", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("part_identifier", returnFromRule, offset, transform);
-    continuation = identifierParser("identifier", continuation, returnFromRule, input, transform);
-    return cont(continuation, [], offset);
-});
-
-addRule("part", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("part_number", returnFromRule, offset, transform);
-    continuation = identifierParser("number", continuation, returnFromRule, input, transform);
-    return cont(continuation, [], offset);
-});
-
-addRule("part", function (input, offset, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("part_eof", returnFromRule, offset, transform);
-    continuation = identifierParser("dot", continuation, returnFromRule, input, transform);
+    continuation = initialSuffixContinuation("grammar_single", returnFromRule, offset, transform);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("rule", continuation, returnFromRule, input, transform);
+    continuation = identifierParser("newlines", continuation, returnFromRule, input, transform);
     return cont(continuation, [], offset);
 });
 

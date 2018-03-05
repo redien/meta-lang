@@ -16,73 +16,13 @@ newlines
 whitespaces space whitespaces
 whitespaces
 
-numeric 48
-numeric 49
-numeric 50
-numeric 51
-numeric 52
-numeric 53
-numeric 54
-numeric 55
-numeric 56
-numeric 57
+numeric 48-57
 
 number numeric number  -multiple
 number numeric         -single
 
-alphabetical 65
-alphabetical 66
-alphabetical 67
-alphabetical 68
-alphabetical 69
-alphabetical 70
-alphabetical 71
-alphabetical 72
-alphabetical 73
-alphabetical 74
-alphabetical 75
-alphabetical 76
-alphabetical 77
-alphabetical 78
-alphabetical 79
-alphabetical 80
-alphabetical 81
-alphabetical 82
-alphabetical 83
-alphabetical 84
-alphabetical 85
-alphabetical 86
-alphabetical 87
-alphabetical 88
-alphabetical 89
-alphabetical 90
-
-alphabetical 97
-alphabetical 98
-alphabetical 99
-alphabetical 100
-alphabetical 101
-alphabetical 102
-alphabetical 103
-alphabetical 104
-alphabetical 105
-alphabetical 106
-alphabetical 107
-alphabetical 108
-alphabetical 109
-alphabetical 110
-alphabetical 111
-alphabetical 112
-alphabetical 113
-alphabetical 114
-alphabetical 115
-alphabetical 116
-alphabetical 117
-alphabetical 118
-alphabetical 119
-alphabetical 120
-alphabetical 121
-alphabetical 122
+alphabetical 65-90
+alphabetical 97-122
 
 alphanumeric numeric
 alphanumeric alphabetical
@@ -92,21 +32,22 @@ identifier alphabetical                     -single
 identifierRest alphanumeric identifierRest  -multiple
 identifierRest alphanumeric                 -single
 
-grammar newlines rule newlines grammar  -multiple
-grammar newlines rule newlines          -single
-
-rule identifier whitespaces parts whitespaces suffix newline  -withSuffix
-rule identifier whitespaces parts whitespaces newline         -withoutSuffix
-
-suffix dash identifier  -suffix
+part identifier          -identifier
+part number dash number  -range
+part number              -number
+part dot                 -eof
 
 parts part whitespaces parts  -multiple
 parts part                    -single
 parts                         -none
 
-part identifier  -identifier
-part number      -number
-part dot         -eof
+suffix dash identifier  -suffix
+
+rule identifier whitespaces parts whitespaces suffix newline  -withSuffix
+rule identifier whitespaces parts whitespaces newline         -withoutSuffix
+
+grammar newlines rule newlines grammar  -multiple
+grammar newlines rule newlines          -single
 
 start grammar .  -start
 

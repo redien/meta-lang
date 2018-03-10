@@ -1,5 +1,5 @@
 
-Test cases for backtracking
+Should support backtracking
 | A  97 A 97
 | A  97 97
 | start A

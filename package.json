@@ -7,13 +7,15 @@
     "meta": "bin/meta.sh"
   },
   "dependencies": {},
-  "devDependencies": {},
+  "devDependencies": {
+    "tap-spec": "^4.1.1"
+  },
   "scripts": {
     "meta": "mkdir -p build && node current/meta-to-js.js src/meta.meta build/meta-parser.js && node src/tmeta-to-js.js src/meta-to-js.tmeta build/meta-parser.js build/meta-to-js.js",
     "tmeta": "mkdir -p build && node current/meta-to-js.js src/tmeta.meta build/tmeta-parser.js",
     "build": "npm run meta && npm run tmeta",
-    "update": "npm run build && cp build/*.js current/ && npm run build && cp build/*.js current/ && npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "update": "npm run build && cp build/*.js current/ && npm run build && cp build/*.js current/ && npm run build && cp build/*.js current/ && npm run build",
+    "test": "specification/spec-runner.sh specification bin/parser-spec.sh | tap-spec"
   },
   "author": "Jesper Oskarsson <jesosk@gmail.com>",
   "license": "CC0-1.0"

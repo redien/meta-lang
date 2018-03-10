@@ -1,5 +1,7 @@
 #!/bin/sh
 
+valid_languages=(js sh)
+
 language="$1"
 input_path="$2"
 output_path="$3"
@@ -12,7 +14,17 @@ resolve_symlink() {
     fi
 }
 
-if [ -z "$language" ] || [ -z "$input_path" ] || [ -z "$output_path" ]; then
+invalid_language() {
+    for valid_language in "${valid_languages[@]}"; do
+        if [ "$language" == "$valid_language" ]; then
+            return 1
+        fi
+    done
+
+    return 0
+}
+
+if [ -z "$language" ] || [ -z "$input_path" ] || [ -z "$output_path" ] || invalid_language "$language"; then
     >&2 cat <<endhelp
 
 Usage: meta [language] [input grammar] [destination]

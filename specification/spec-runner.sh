@@ -11,17 +11,21 @@ mkdir -p build
 rm build/build.log > /dev/null 2>&1
 
 function testLine {
-    result=$($eval_command "${2}" "${1:2}" 2>> build/build.log)
-
-    if [ "$?" != "0" ]; then
-        result="Build error"
-    fi
-
+    result=$($eval_command "${2}" "${1:2}" 2>&1)
+    code=$?
     tests=$((tests+1))
 
-    if [ "$result" == "${3:2}" ]; then
+    if [ "$code" != "0" ]; then
+        echo not ok $tests - Build error
+        echo " ---"
+        echo "   $result"
+        echo " ..."
+        failing=$((failing+1))
+
+    elif [ "$result" == "${3:2}" ]; then
         echo ok $tests - ${1:2} = $result
         passing=$((passing+1))
+
     else
         echo not ok $tests - expected \"${3:2}\" but got \"$result\"
         echo  ---

@@ -26,7 +26,7 @@ part-range from _ to
     
 
 part-identifier identifier
-        continuation = identifierParser("<% identifier %>", parseCache, continuation, returnFromRule, input, transform);
+        continuation = identifierParser("<% identifier %>", continuation, returnFromRule, input, transform);
     
 
 part-eof
@@ -43,7 +43,7 @@ parts-none
 
 rule-withoutSuffix name _ parts _ _
     
-    addRule("<% name %>", function (parseCache, input, offset, transform, continuation) {
+    addRule("<% name %>", function (input, offset, transform, continuation) {
         var returnFromRule = continuation;
         continuation = initialContinuation(returnFromRule, offset);
     <% parts %>    return cont(continuation, [], offset);
@@ -52,7 +52,7 @@ rule-withoutSuffix name _ parts _ _
 
 rule-withSuffix name _ parts _ suffix _
     
-    addRule("<% name %>", function (parseCache, input, offset, transform, continuation) {
+    addRule("<% name %>", function (input, offset, transform, continuation) {
         var returnFromRule = continuation;
         continuation = initialSuffixContinuation("<% name %>_<% suffix %>", returnFromRule, offset, transform);
     <% parts %>    return cont(continuation, [], offset);
@@ -92,13 +92,13 @@ start-start grammar _
         }
         rule.push(parseFunction);
     };
-    function match (parseCache, alternatives, input, offset, transform, continuation) {
+    function match (alternatives, input, offset, transform, continuation) {
         if (alternatives.length === 0) {
             return cont(continuation, null);
         } else {
-            return cont(alternatives[0], parseCache, input, offset, transform, function (result) {
+            return cont(alternatives[0], input, offset, transform, function (result) {
                 if (result !== null) { return cont(continuation, result); }
-                return cont(match, parseCache, alternatives.slice(1), input, offset, transform, continuation);
+                return cont(match, alternatives.slice(1), input, offset, transform, continuation);
             });
         }
     }
@@ -123,9 +123,9 @@ start-start grammar _
             }
         };
     }
-    function identifierParser (identifier, parseCache, continuation, returnFromRule, input, transform) {
+    function identifierParser (identifier, continuation, returnFromRule, input, transform) {
         return function (items, offset) {
-            return cont(parse, parseCache, identifier, input, offset, transform, function (result) {
+            return cont(parse, identifier, input, offset, transform, function (result) {
                 if (result === null) { return cont(returnFromRule, null); }
                 return cont(continuation, items.concat([result]), result.end);
             });
@@ -155,24 +155,15 @@ start-start grammar _
             return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
         };
     }
-    function parse (parseCache, name, input, offset, transform, continuation) {
+    function parse (name, input, offset, transform, continuation) {
         var alternatives = rules[name];
         if (alternatives === undefined) {
             throw new Error('Unknown rule ' + name);
         }
-        var key = name + ':' + offset;
-        var cachedParse = parseCache[key];
-        if (cachedParse !== undefined) {
-            return cont(continuation, cachedParse);
-        } else {
-            return cont(match, parseCache, alternatives, input, offset, transform, function (result) {
-                parseCache[key] = result;
-                return cont(continuation, result);
-            });
-        }
+        return cont(match, alternatives, input, offset, transform, continuation);
     }
     <% grammar %>
     module.exports.parse = function (input, transform) {
-        return trampoline(cont(parse, {}, 'start', input, 0, transform, identity));
+        return trampoline(cont(parse, 'start', input, 0, transform, identity));
     };
 

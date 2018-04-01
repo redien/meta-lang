@@ -18,19 +18,19 @@ identifierRest-multiple a b
     <% a %><% b %>
 
 part-number number
-        continuation = numberParser(<% number %>, continuation, returnFromRule, input);
+        continuation = numberParser(<% number %>, continuation, returnFromRule);
     
 
 part-range from _ to
-        continuation = rangeParser(<% from %>, <% to %>, continuation, returnFromRule, input);
+        continuation = rangeParser(<% from %>, <% to %>, continuation, returnFromRule);
     
 
 part-identifier identifier
-        continuation = identifierParser("<% identifier %>", continuation, returnFromRule, input, transform);
+        continuation = identifierParser("<% identifier %>", continuation, returnFromRule, transform);
     
 
 part-eof
-        continuation = eofParser(continuation, returnFromRule, input);
+        continuation = eofParser(continuation, returnFromRule);
     
 
 parts-single n
@@ -43,19 +43,19 @@ parts-none
 
 rule-withoutSuffix name _ parts _ _
     
-    addRule("<% name %>", function (input, offset, transform, continuation) {
+    addRule("<% name %>", function (iterator, transform, continuation) {
         var returnFromRule = continuation;
-        continuation = initialContinuation(returnFromRule, offset);
-    <% parts %>    return cont(continuation, [], offset);
+        continuation = initialContinuation(returnFromRule, iterator);
+    <% parts %>    return cont(continuation, [], iterator);
     });
     
 
 rule-withSuffix name _ parts _ suffix _
     
-    addRule("<% name %>", function (input, offset, transform, continuation) {
+    addRule("<% name %>", function (iterator, transform, continuation) {
         var returnFromRule = continuation;
-        continuation = initialSuffixContinuation("<% name %>_<% suffix %>", returnFromRule, offset, transform);
-    <% parts %>    return cont(continuation, [], offset);
+        continuation = initialSuffixContinuation("<% name %>_<% suffix %>", returnFromRule, iterator, transform);
+    <% parts %>    return cont(continuation, [], iterator);
     });
     
 
@@ -92,78 +92,90 @@ start-start grammar _
         }
         rule.push(parseFunction);
     };
-    function match (alternatives, input, offset, transform, continuation) {
+    function indexedIterator(input) {
+        return {input: input, offset: 0};
+    }
+    function next(iterator) {
+        return {input: iterator.input, offset: iterator.offset + 1};
+    }
+    function value(iterator) {
+        return iterator.input.charCodeAt(iterator.offset);
+    }
+    function isEnd(iterator) {
+        return iterator.offset === iterator.input.length;
+    }
+    function match (alternatives, iterator, transform, continuation) {
         if (alternatives.length === 0) {
             return cont(continuation, null);
         } else {
-            return cont(alternatives[0], input, offset, transform, function (result) {
+            return cont(alternatives[0], iterator, transform, function (result) {
                 if (result !== null) { return cont(continuation, result); }
-                return cont(match, alternatives.slice(1), input, offset, transform, continuation);
+                return cont(match, alternatives.slice(1), iterator, transform, continuation);
             });
         }
     }
-    function numberParser (number, continuation, returnFromRule, input) {
-        return function (items, offset) {
-            if (input.charCodeAt(offset) === number) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
+    function numberParser (number, continuation, returnFromRule) {
+        return function (items, iterator) {
+            if (value(iterator) === number) {
+                var result = {result: String.fromCharCode(value(iterator)), start: iterator, end: next(iterator)};
+                return cont(continuation, items.concat([result]), next(iterator));
             } else {
                 return cont(returnFromRule, null);
             }
         };
     }
-    function rangeParser (from, to, continuation, returnFromRule, input) {
-        return function (items, offset) {
-            var code = input.charCodeAt(offset);
+    function rangeParser (from, to, continuation, returnFromRule) {
+        return function (items, iterator) {
+            var code = value(iterator);
             if (code >= from && code <= to) {
-                var result = {result: input[offset], start: offset, end: offset + 1};
-                return cont(continuation, items.concat([result]), offset + 1);
+                var result = {result: String.fromCharCode(code), start: iterator, end: next(iterator)};
+                return cont(continuation, items.concat([result]), next(iterator));
             } else {
                 return cont(returnFromRule, null);
             }
         };
     }
-    function identifierParser (identifier, continuation, returnFromRule, input, transform) {
-        return function (items, offset) {
-            return cont(parse, identifier, input, offset, transform, function (result) {
+    function identifierParser (identifier, continuation, returnFromRule, transform) {
+        return function (items, iterator) {
+            return cont(parse, identifier, iterator, transform, function (result) {
                 if (result === null) { return cont(returnFromRule, null); }
                 return cont(continuation, items.concat([result]), result.end);
             });
         };
     }
-    function eofParser (continuation, returnFromRule, input) {
-        return function (items, offset) {
-            if (offset === input.length) {
-                return cont(continuation, items.concat([{result: null, start: offset, end: offset}]), offset);
+    function eofParser (continuation, returnFromRule) {
+        return function (items, iterator) {
+            if (isEnd(iterator)) {
+                return cont(continuation, items.concat([{result: null, start: iterator, end: iterator}]), iterator);
             } else {
                 return cont(returnFromRule, null);
             }
         };
     }
     
-    function initialContinuation (returnFromRule, startOffset) {
-        return function (items, offset) {
+    function initialContinuation (returnFromRule, startIterator) {
+        return function (items, iterator) {
             var results = items.map(function (i) { return i.result; });
-            return cont(returnFromRule, {result: results, start: startOffset, end: offset});
+            return cont(returnFromRule, {result: results, start: startIterator, end: iterator});
         };
     }
     
-    function initialSuffixContinuation (transformer, returnFromRule, startOffset, transform) {
-        return function (items, offset) {
+    function initialSuffixContinuation (transformer, returnFromRule, startIterator, transform) {
+        return function (items, iterator) {
             var results = items.map(function (i) { return i.result; });
             var transformedResults = transform[transformer].apply(null, results);
-            return cont(returnFromRule, {result: transformedResults, start: startOffset, end: offset});
+            return cont(returnFromRule, {result: transformedResults, start: startIterator, end: iterator});
         };
     }
-    function parse (name, input, offset, transform, continuation) {
+    function parse (name, iterator, transform, continuation) {
         var alternatives = rules[name];
         if (alternatives === undefined) {
             throw new Error('Unknown rule ' + name);
         }
-        return cont(match, alternatives, input, offset, transform, continuation);
+        return cont(match, alternatives, iterator, transform, continuation);
     }
     <% grammar %>
     module.exports.parse = function (input, transform) {
-        return trampoline(cont(parse, 'start', input, 0, transform, identity));
+        return trampoline(cont(parse, 'start', indexedIterator(input), transform, identity));
     };
 

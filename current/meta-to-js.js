@@ -457,6 +457,7 @@ var grammar = [
     }
 },
 
+{}
 ];
 module.exports.parse = function (input, transform) {
     return trampoline(cont(parse, 'start', indexedIterator(input), transform, identity));
@@ -635,6 +636,7 @@ function parse (name, iterator, transform, continuation) {\n\
 }\n\
 var grammar = [\n\
 ' + grammar + '\n\
+{}\n\
 ];\n\
 module.exports.parse = function (input, transform) {\n\
     return trampoline(cont(parse, \'start\', indexedIterator(input), transform, identity));\n\

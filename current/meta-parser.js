@@ -456,6 +456,7 @@ var grammar = [
     }
 },
 
+{}
 ];
 module.exports.parse = function (input, transform) {
     return trampoline(cont(parse, 'start', indexedIterator(input), transform, identity));

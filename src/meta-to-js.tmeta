@@ -34,27 +34,31 @@ parts-single n
 
 parts-multiple part _ rest
     <% rest %>,
-            <% part %>
+                <% part %>
 
 parts-none
     
 
 rule-withoutSuffix name _ parts _ _
-    
-    addRule("<% name %>", function (iterator, transform, returnFromRule) {
-        return cont(pipe([
-            identity<% parts %>
-        ])(initialContinuation(returnFromRule, iterator)), [], iterator);
-    });
+    {
+        name: "<% name %>",
+        parser: function (iterator, transform, returnFromRule) {
+            return cont(pipe([
+                identity<% parts %>
+            ])(initialContinuation(returnFromRule, iterator)), [], iterator);
+        }
+    },
     
 
 rule-withSuffix name _ parts _ suffix _
-    
-    addRule("<% name %>", function (iterator, transform, returnFromRule) {
-        return cont(pipe([
-            identity<% parts %>
-        ])(initialSuffixContinuation("<% name %>_<% suffix %>", returnFromRule, iterator, transform)), [], iterator);
-    });
+    {
+        name: "<% name %>",
+        parser: function (iterator, transform, returnFromRule) {
+            return cont(pipe([
+                identity<% parts %>
+            ])(initialSuffixContinuation("<% name %>_<% suffix %>", returnFromRule, iterator, transform)), [], iterator);
+        }
+    },
     
 
 suffix-suffix _ suffix
@@ -83,15 +87,6 @@ start-start grammar _
     }
     function _pipe (a, b) { return function (value) { return b(a(value)); }; }
     function pipe (fs) { return fs.reduce(_pipe) };
-    var rules = {};
-    function addRule (name, parseFunction) {
-        let rule = rules[name];
-        if (rule === undefined) {
-            rule = []; 
-            rules[name] = rule;
-        }
-        rule.push(parseFunction);
-    };
     function indexedIterator(input) {
         return {input: input, offset: 0};
     }
@@ -168,13 +163,17 @@ start-start grammar _
         };
     }
     function parse (name, iterator, transform, continuation) {
-        var alternatives = rules[name];
-        if (alternatives === undefined) {
+        var alternatives = grammar
+            .filter(function (rule) { return rule.name === name; })
+            .map(function (rule) { return rule.parser; });
+        if (alternatives.length === 0) {
             throw new Error('Unknown rule ' + name);
         }
         return cont(match, alternatives, iterator, transform, continuation);
     }
+    var grammar = [
     <% grammar %>
+    ];
     module.exports.parse = function (input, transform) {
         return trampoline(cont(parse, 'start', indexedIterator(input), transform, identity));
     };

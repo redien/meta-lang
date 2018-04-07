@@ -13,6 +13,8 @@ function trampoline (thunk) {
     }
     return thunk;
 }
+function _pipe (a, b) { return function (value) { return b(a(value)); }; }
+function pipe (fs) { return fs.reduce(_pipe) };
 var rules = {};
 function addRule (name, parseFunction) {
     let rule = rules[name];
@@ -105,288 +107,325 @@ function parse (name, iterator, transform, continuation) {
     return cont(match, alternatives, iterator, transform, continuation);
 }
 
-addRule("dash", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = numberParser(45, returnFromRule, continuation);
-    return cont(continuation, [], iterator);
+addRule("dash", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        numberParser.bind(null, 45, returnFromRule)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("dot", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = numberParser(46, returnFromRule, continuation);
-    return cont(continuation, [], iterator);
+addRule("dot", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        numberParser.bind(null, 46, returnFromRule)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("space", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = numberParser(32, returnFromRule, continuation);
-    return cont(continuation, [], iterator);
+addRule("space", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        numberParser.bind(null, 32, returnFromRule)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("lf", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = numberParser(10, returnFromRule, continuation);
-    return cont(continuation, [], iterator);
+addRule("lf", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        numberParser.bind(null, 10, returnFromRule)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("cr", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = numberParser(13, returnFromRule, continuation);
-    return cont(continuation, [], iterator);
+addRule("cr", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        numberParser.bind(null, 13, returnFromRule)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("newline", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("cr", returnFromRule, transform, continuation);
-    continuation = identifierParser("lf", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("newline", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "cr", returnFromRule, transform),
+        identifierParser.bind(null, "lf", returnFromRule, transform)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("newline", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("lf", returnFromRule, transform, continuation);
-    continuation = identifierParser("cr", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("newline", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "lf", returnFromRule, transform),
+        identifierParser.bind(null, "cr", returnFromRule, transform)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("newline", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("lf", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("newline", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "lf", returnFromRule, transform)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("newlines", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("newlines", returnFromRule, transform, continuation);
-    continuation = identifierParser("newline", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("newlines", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "newlines", returnFromRule, transform),
+        identifierParser.bind(null, "newline", returnFromRule, transform)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("newlines", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("newline", returnFromRule, transform, continuation);
-    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("newlines", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "newline", returnFromRule, transform),
+        identifierParser.bind(null, "whitespaces", returnFromRule, transform)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("newlines", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    return cont(continuation, [], iterator);
+addRule("newlines", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("whitespaces", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
-    continuation = identifierParser("space", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("whitespaces", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "whitespaces", returnFromRule, transform),
+        identifierParser.bind(null, "space", returnFromRule, transform)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("whitespaces", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    return cont(continuation, [], iterator);
+addRule("whitespaces", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("numeric", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = rangeParser(48, 57, returnFromRule, continuation);
-    return cont(continuation, [], iterator);
+addRule("numeric", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        rangeParser.bind(null, 48, 57, returnFromRule)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("number", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("number_multiple", returnFromRule, iterator, transform);
-    continuation = identifierParser("number", returnFromRule, transform, continuation);
-    continuation = identifierParser("numeric", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("number", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "number", returnFromRule, transform),
+        identifierParser.bind(null, "numeric", returnFromRule, transform)
+    ])(initialSuffixContinuation("number_multiple", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("number", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("number_single", returnFromRule, iterator, transform);
-    continuation = identifierParser("numeric", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("number", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "numeric", returnFromRule, transform)
+    ])(initialSuffixContinuation("number_single", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("alphabetical", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = rangeParser(65, 90, returnFromRule, continuation);
-    return cont(continuation, [], iterator);
+addRule("alphabetical", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        rangeParser.bind(null, 65, 90, returnFromRule)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("alphabetical", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = rangeParser(97, 122, returnFromRule, continuation);
-    return cont(continuation, [], iterator);
+addRule("alphabetical", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        rangeParser.bind(null, 97, 122, returnFromRule)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("alphanumeric", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("numeric", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("alphanumeric", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "numeric", returnFromRule, transform)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("alphanumeric", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("alphabetical", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("alphanumeric", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "alphabetical", returnFromRule, transform)
+    ])(initialContinuation(returnFromRule, iterator));
+    return cont(parser, [], iterator);
 });
 
-addRule("identifier", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("identifier_multiple", returnFromRule, iterator, transform);
-    continuation = identifierParser("identifierRest", returnFromRule, transform, continuation);
-    continuation = identifierParser("alphabetical", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("identifier", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "identifierRest", returnFromRule, transform),
+        identifierParser.bind(null, "alphabetical", returnFromRule, transform)
+    ])(initialSuffixContinuation("identifier_multiple", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("identifier", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("identifier_single", returnFromRule, iterator, transform);
-    continuation = identifierParser("alphabetical", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("identifier", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "alphabetical", returnFromRule, transform)
+    ])(initialSuffixContinuation("identifier_single", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("identifierRest", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("identifierRest_multiple", returnFromRule, iterator, transform);
-    continuation = identifierParser("identifierRest", returnFromRule, transform, continuation);
-    continuation = identifierParser("alphanumeric", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("identifierRest", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "identifierRest", returnFromRule, transform),
+        identifierParser.bind(null, "alphanumeric", returnFromRule, transform)
+    ])(initialSuffixContinuation("identifierRest_multiple", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("identifierRest", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("identifierRest_single", returnFromRule, iterator, transform);
-    continuation = identifierParser("alphanumeric", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("identifierRest", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "alphanumeric", returnFromRule, transform)
+    ])(initialSuffixContinuation("identifierRest_single", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("part", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("part_identifier", returnFromRule, iterator, transform);
-    continuation = identifierParser("identifier", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("part", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "identifier", returnFromRule, transform)
+    ])(initialSuffixContinuation("part_identifier", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("part", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("part_range", returnFromRule, iterator, transform);
-    continuation = identifierParser("number", returnFromRule, transform, continuation);
-    continuation = identifierParser("dash", returnFromRule, transform, continuation);
-    continuation = identifierParser("number", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("part", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "number", returnFromRule, transform),
+        identifierParser.bind(null, "dash", returnFromRule, transform),
+        identifierParser.bind(null, "number", returnFromRule, transform)
+    ])(initialSuffixContinuation("part_range", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("part", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("part_number", returnFromRule, iterator, transform);
-    continuation = identifierParser("number", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("part", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "number", returnFromRule, transform)
+    ])(initialSuffixContinuation("part_number", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("part", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("part_eof", returnFromRule, iterator, transform);
-    continuation = identifierParser("dot", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("part", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "dot", returnFromRule, transform)
+    ])(initialSuffixContinuation("part_eof", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("parts", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("parts_multiple", returnFromRule, iterator, transform);
-    continuation = identifierParser("parts", returnFromRule, transform, continuation);
-    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
-    continuation = identifierParser("part", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("parts", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "parts", returnFromRule, transform),
+        identifierParser.bind(null, "whitespaces", returnFromRule, transform),
+        identifierParser.bind(null, "part", returnFromRule, transform)
+    ])(initialSuffixContinuation("parts_multiple", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("parts", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("parts_single", returnFromRule, iterator, transform);
-    continuation = identifierParser("part", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("parts", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "part", returnFromRule, transform)
+    ])(initialSuffixContinuation("parts_single", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("parts", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("parts_none", returnFromRule, iterator, transform);
-    return cont(continuation, [], iterator);
+addRule("parts", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity
+    ])(initialSuffixContinuation("parts_none", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("suffix", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("suffix_suffix", returnFromRule, iterator, transform);
-    continuation = identifierParser("identifier", returnFromRule, transform, continuation);
-    continuation = identifierParser("dash", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("suffix", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "identifier", returnFromRule, transform),
+        identifierParser.bind(null, "dash", returnFromRule, transform)
+    ])(initialSuffixContinuation("suffix_suffix", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("rule", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("rule_withSuffix", returnFromRule, iterator, transform);
-    continuation = identifierParser("newline", returnFromRule, transform, continuation);
-    continuation = identifierParser("suffix", returnFromRule, transform, continuation);
-    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
-    continuation = identifierParser("parts", returnFromRule, transform, continuation);
-    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
-    continuation = identifierParser("identifier", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("rule", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "newline", returnFromRule, transform),
+        identifierParser.bind(null, "suffix", returnFromRule, transform),
+        identifierParser.bind(null, "whitespaces", returnFromRule, transform),
+        identifierParser.bind(null, "parts", returnFromRule, transform),
+        identifierParser.bind(null, "whitespaces", returnFromRule, transform),
+        identifierParser.bind(null, "identifier", returnFromRule, transform)
+    ])(initialSuffixContinuation("rule_withSuffix", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("rule", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("rule_withoutSuffix", returnFromRule, iterator, transform);
-    continuation = identifierParser("newline", returnFromRule, transform, continuation);
-    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
-    continuation = identifierParser("parts", returnFromRule, transform, continuation);
-    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
-    continuation = identifierParser("identifier", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("rule", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "newline", returnFromRule, transform),
+        identifierParser.bind(null, "whitespaces", returnFromRule, transform),
+        identifierParser.bind(null, "parts", returnFromRule, transform),
+        identifierParser.bind(null, "whitespaces", returnFromRule, transform),
+        identifierParser.bind(null, "identifier", returnFromRule, transform)
+    ])(initialSuffixContinuation("rule_withoutSuffix", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("grammar", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("grammar_multiple", returnFromRule, iterator, transform);
-    continuation = identifierParser("grammar", returnFromRule, transform, continuation);
-    continuation = identifierParser("newlines", returnFromRule, transform, continuation);
-    continuation = identifierParser("rule", returnFromRule, transform, continuation);
-    continuation = identifierParser("newlines", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("grammar", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "grammar", returnFromRule, transform),
+        identifierParser.bind(null, "newlines", returnFromRule, transform),
+        identifierParser.bind(null, "rule", returnFromRule, transform),
+        identifierParser.bind(null, "newlines", returnFromRule, transform)
+    ])(initialSuffixContinuation("grammar_multiple", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("grammar", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("grammar_single", returnFromRule, iterator, transform);
-    continuation = identifierParser("newlines", returnFromRule, transform, continuation);
-    continuation = identifierParser("rule", returnFromRule, transform, continuation);
-    continuation = identifierParser("newlines", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("grammar", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        identifierParser.bind(null, "newlines", returnFromRule, transform),
+        identifierParser.bind(null, "rule", returnFromRule, transform),
+        identifierParser.bind(null, "newlines", returnFromRule, transform)
+    ])(initialSuffixContinuation("grammar_single", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
-addRule("start", function (iterator, transform, continuation) {
-    var returnFromRule = continuation;
-    continuation = initialSuffixContinuation("start_start", returnFromRule, iterator, transform);
-    continuation = eofParser(returnFromRule, continuation);
-    continuation = identifierParser("grammar", returnFromRule, transform, continuation);
-    return cont(continuation, [], iterator);
+addRule("start", function (iterator, transform, returnFromRule) {
+    var parser = pipe([
+        identity,
+        eofParser.bind(null, returnFromRule),
+        identifierParser.bind(null, "grammar", returnFromRule, transform)
+    ])(initialSuffixContinuation("start_start", returnFromRule, iterator, transform));
+    return cont(parser, [], iterator);
 });
 
 module.exports.parse = function (input, transform) {
@@ -413,42 +452,44 @@ transform.identifierRest_multiple = function (a, b) {
     return '' + a + '' + b + '';
 };
 transform.part_number = function (number) {
-    return 'numberParser(' + number + ', returnFromRule, continuation)';
+    return 'numberParser.bind(null, ' + number + ', returnFromRule)';
 };
 transform.part_range = function (from, _, to) {
-    return 'rangeParser(' + from + ', ' + to + ', returnFromRule, continuation)';
+    return 'rangeParser.bind(null, ' + from + ', ' + to + ', returnFromRule)';
 };
 transform.part_identifier = function (identifier) {
-    return 'identifierParser("' + identifier + '", returnFromRule, transform, continuation)';
+    return 'identifierParser.bind(null, "' + identifier + '", returnFromRule, transform)';
 };
 transform.part_eof = function () {
-    return 'eofParser(returnFromRule, continuation)';
+    return 'eofParser.bind(null, returnFromRule)';
 };
 transform.parts_single = function (n) {
     return '' + n + '';
 };
 transform.parts_multiple = function (part, _, rest) {
-    return '' + rest + '    continuation = ' + part + ';\n\
-';
+    return '' + rest + ',\n\
+        ' + part + '';
 };
 transform.parts_none = function () {
     return '';
 };
 transform.rule_withoutSuffix = function (name, _, parts, _, _) {
     return '\n\
-addRule("' + name + '", function (iterator, transform, continuation) {\n\
-    var returnFromRule = continuation;\n\
-    continuation = initialContinuation(returnFromRule, iterator);\n\
-' + parts + '    return cont(continuation, [], iterator);\n\
+addRule("' + name + '", function (iterator, transform, returnFromRule) {\n\
+    var parser = pipe([\n\
+        identity' + parts + '\n\
+    ])(initialContinuation(returnFromRule, iterator));\n\
+    return cont(parser, [], iterator);\n\
 });\n\
 ';
 };
 transform.rule_withSuffix = function (name, _, parts, _, suffix, _) {
     return '\n\
-addRule("' + name + '", function (iterator, transform, continuation) {\n\
-    var returnFromRule = continuation;\n\
-    continuation = initialSuffixContinuation("' + name + '_' + suffix + '", returnFromRule, iterator, transform);\n\
-' + parts + '    return cont(continuation, [], iterator);\n\
+addRule("' + name + '", function (iterator, transform, returnFromRule) {\n\
+    var parser = pipe([\n\
+        identity' + parts + '\n\
+    ])(initialSuffixContinuation("' + name + '_' + suffix + '", returnFromRule, iterator, transform));\n\
+    return cont(parser, [], iterator);\n\
 });\n\
 ';
 };
@@ -476,6 +517,8 @@ function trampoline (thunk) {\n\
     }\n\
     return thunk;\n\
 }\n\
+function _pipe (a, b) { return function (value) { return b(a(value)); }; }\n\
+function pipe (fs) { return fs.reduce(_pipe) };\n\
 var rules = {};\n\
 function addRule (name, parseFunction) {\n\
     let rule = rules[name];\n\

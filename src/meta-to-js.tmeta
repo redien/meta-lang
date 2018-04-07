@@ -18,42 +18,44 @@ identifierRest-multiple a b
     <% a %><% b %>
 
 part-number number
-    numberParser(<% number %>, returnFromRule, continuation)
+    numberParser.bind(null, <% number %>, returnFromRule)
 
 part-range from _ to
-    rangeParser(<% from %>, <% to %>, returnFromRule, continuation)
+    rangeParser.bind(null, <% from %>, <% to %>, returnFromRule)
 
 part-identifier identifier
-    identifierParser("<% identifier %>", returnFromRule, transform, continuation)
+    identifierParser.bind(null, "<% identifier %>", returnFromRule, transform)
 
 part-eof
-    eofParser(returnFromRule, continuation)
+    eofParser.bind(null, returnFromRule)
 
 parts-single n
     <% n %>
 
 parts-multiple part _ rest
-    <% rest %>    continuation = <% part %>;
-    
+    <% rest %>,
+            <% part %>
 
 parts-none
     
 
 rule-withoutSuffix name _ parts _ _
     
-    addRule("<% name %>", function (iterator, transform, continuation) {
-        var returnFromRule = continuation;
-        continuation = initialContinuation(returnFromRule, iterator);
-    <% parts %>    return cont(continuation, [], iterator);
+    addRule("<% name %>", function (iterator, transform, returnFromRule) {
+        var parser = pipe([
+            identity<% parts %>
+        ])(initialContinuation(returnFromRule, iterator));
+        return cont(parser, [], iterator);
     });
     
 
 rule-withSuffix name _ parts _ suffix _
     
-    addRule("<% name %>", function (iterator, transform, continuation) {
-        var returnFromRule = continuation;
-        continuation = initialSuffixContinuation("<% name %>_<% suffix %>", returnFromRule, iterator, transform);
-    <% parts %>    return cont(continuation, [], iterator);
+    addRule("<% name %>", function (iterator, transform, returnFromRule) {
+        var parser = pipe([
+            identity<% parts %>
+        ])(initialSuffixContinuation("<% name %>_<% suffix %>", returnFromRule, iterator, transform));
+        return cont(parser, [], iterator);
     });
     
 
@@ -81,6 +83,8 @@ start-start grammar _
         }
         return thunk;
     }
+    function _pipe (a, b) { return function (value) { return b(a(value)); }; }
+    function pipe (fs) { return fs.reduce(_pipe) };
     var rules = {};
     function addRule (name, parseFunction) {
         let rule = rules[name];

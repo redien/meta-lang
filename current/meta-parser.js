@@ -74,14 +74,12 @@ function eofParser (returnFromRule, continuation) {
         }
     };
 }
-
 function initialContinuation (returnFromRule, startIterator) {
     return function (items, iterator) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startIterator, end: iterator});
     };
 }
-
 function initialSuffixContinuation (transformer, returnFromRule, startIterator, transform) {
     return function (items, iterator) {
         var results = items.map(function (i) { return i.result; });

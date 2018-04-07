@@ -75,14 +75,12 @@ function eofParser (returnFromRule, continuation) {
         }
     };
 }
-
 function initialContinuation (returnFromRule, startIterator) {
     return function (items, iterator) {
         var results = items.map(function (i) { return i.result; });
         return cont(returnFromRule, {result: results, start: startIterator, end: iterator});
     };
 }
-
 function initialSuffixContinuation (transformer, returnFromRule, startIterator, transform) {
     return function (items, iterator) {
         var results = items.map(function (i) { return i.result; });
@@ -613,14 +611,12 @@ function eofParser (returnFromRule, continuation) {\n\
         }\n\
     };\n\
 }\n\
-\n\
 function initialContinuation (returnFromRule, startIterator) {\n\
     return function (items, iterator) {\n\
         var results = items.map(function (i) { return i.result; });\n\
         return cont(returnFromRule, {result: results, start: startIterator, end: iterator});\n\
     };\n\
 }\n\
-\n\
 function initialSuffixContinuation (transformer, returnFromRule, startIterator, transform) {\n\
     return function (items, iterator) {\n\
         var results = items.map(function (i) { return i.result; });\n\

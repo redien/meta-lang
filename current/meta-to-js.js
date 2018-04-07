@@ -413,26 +413,23 @@ transform.identifierRest_multiple = function (a, b) {
     return '' + a + '' + b + '';
 };
 transform.part_number = function (number) {
-    return '    continuation = numberParser(' + number + ', continuation, returnFromRule);\n\
-';
+    return 'numberParser(' + number + ', continuation, returnFromRule)';
 };
 transform.part_range = function (from, _, to) {
-    return '    continuation = rangeParser(' + from + ', ' + to + ', continuation, returnFromRule);\n\
-';
+    return 'rangeParser(' + from + ', ' + to + ', continuation, returnFromRule)';
 };
 transform.part_identifier = function (identifier) {
-    return '    continuation = identifierParser("' + identifier + '", continuation, returnFromRule, transform);\n\
-';
+    return 'identifierParser("' + identifier + '", continuation, returnFromRule, transform)';
 };
 transform.part_eof = function () {
-    return '    continuation = eofParser(continuation, returnFromRule);\n\
-';
+    return 'eofParser(continuation, returnFromRule)';
 };
 transform.parts_single = function (n) {
     return '' + n + '';
 };
 transform.parts_multiple = function (part, _, rest) {
-    return '' + rest + '' + part + '';
+    return '' + rest + '    continuation = ' + part + ';\n\
+';
 };
 transform.parts_none = function () {
     return '';

@@ -18,28 +18,26 @@ identifierRest-multiple a b
     <% a %><% b %>
 
 part-number number
-        continuation = numberParser(<% number %>, continuation, returnFromRule);
-    
+    numberParser(<% number %>, continuation, returnFromRule)
 
 part-range from _ to
-        continuation = rangeParser(<% from %>, <% to %>, continuation, returnFromRule);
-    
+    rangeParser(<% from %>, <% to %>, continuation, returnFromRule)
 
 part-identifier identifier
-        continuation = identifierParser("<% identifier %>", continuation, returnFromRule, transform);
-    
+    identifierParser("<% identifier %>", continuation, returnFromRule, transform)
 
 part-eof
-        continuation = eofParser(continuation, returnFromRule);
-    
+    eofParser(continuation, returnFromRule)
 
 parts-single n
     <% n %>
 
 parts-multiple part _ rest
-    <% rest %><% part %>
+    <% rest %>    continuation = <% part %>;
+    
 
 parts-none
+    
 
 rule-withoutSuffix name _ parts _ _
     

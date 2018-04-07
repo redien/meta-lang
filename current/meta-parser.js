@@ -14,6 +14,8 @@ function trampoline (thunk) {
 }
 function _pipe (a, b) { return function (value) { return b(a(value)); }; }
 function pipe (fs) { return fs.reduce(_pipe) };
+function zip (arrays) { return arrays[0].map(function(_,i){ return arrays.map(function(array){return array[i]}) }); }
+function objectToArray(obj) { return zip([Object.keys(obj), Object.values(obj)]); }
 function indexedIterator(input) {
     return {input: input, offset: 0};
 }
@@ -80,10 +82,15 @@ function initialContinuation (returnFromRule, startIterator) {
         return cont(returnFromRule, {result: results, start: startIterator, end: iterator});
     };
 }
+function findTransformer(transform, name) {
+    return transform.filter(function (transformer) {
+        return transformer[0] === name;
+    });
+}
 function initialSuffixContinuation (transformer, returnFromRule, startIterator, transform) {
     return function (items, iterator) {
         var results = items.map(function (i) { return i.result; });
-        var transformedResults = transform[transformer].apply(null, results);
+        var transformedResults = findTransformer(transform, transformer)[0][1].apply(null, results);
         return cont(returnFromRule, {result: transformedResults, start: startIterator, end: iterator});
     };
 }
@@ -459,5 +466,5 @@ var grammar = [
 {}
 ];
 module.exports.parse = function (input, transform) {
-    return trampoline(cont(parse, 'start', indexedIterator(input), transform, identity));
+    return trampoline(cont(parse, 'start', indexedIterator(input), objectToArray(transform), identity));
 };

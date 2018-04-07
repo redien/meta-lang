@@ -42,20 +42,18 @@ parts-none
 rule-withoutSuffix name _ parts _ _
     
     addRule("<% name %>", function (iterator, transform, returnFromRule) {
-        var parser = pipe([
+        return cont(pipe([
             identity<% parts %>
-        ])(initialContinuation(returnFromRule, iterator));
-        return cont(parser, [], iterator);
+        ])(initialContinuation(returnFromRule, iterator)), [], iterator);
     });
     
 
 rule-withSuffix name _ parts _ suffix _
     
     addRule("<% name %>", function (iterator, transform, returnFromRule) {
-        var parser = pipe([
+        return cont(pipe([
             identity<% parts %>
-        ])(initialSuffixContinuation("<% name %>_<% suffix %>", returnFromRule, iterator, transform));
-        return cont(parser, [], iterator);
+        ])(initialSuffixContinuation("<% name %>_<% suffix %>", returnFromRule, iterator, transform)), [], iterator);
     });
     
 

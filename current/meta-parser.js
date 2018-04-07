@@ -107,273 +107,241 @@ function parse (name, iterator, transform, continuation) {
 }
 
 addRule("dash", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         numberParser.bind(null, 45, returnFromRule)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("dot", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         numberParser.bind(null, 46, returnFromRule)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("space", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         numberParser.bind(null, 32, returnFromRule)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("lf", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         numberParser.bind(null, 10, returnFromRule)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("cr", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         numberParser.bind(null, 13, returnFromRule)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("newline", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "cr", returnFromRule, transform),
         identifierParser.bind(null, "lf", returnFromRule, transform)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("newline", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "lf", returnFromRule, transform),
         identifierParser.bind(null, "cr", returnFromRule, transform)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("newline", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "lf", returnFromRule, transform)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("newlines", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "newlines", returnFromRule, transform),
         identifierParser.bind(null, "newline", returnFromRule, transform)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("newlines", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "newline", returnFromRule, transform),
         identifierParser.bind(null, "whitespaces", returnFromRule, transform)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("newlines", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("whitespaces", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "whitespaces", returnFromRule, transform),
         identifierParser.bind(null, "space", returnFromRule, transform)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("whitespaces", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("numeric", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         rangeParser.bind(null, 48, 57, returnFromRule)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("number", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "number", returnFromRule, transform),
         identifierParser.bind(null, "numeric", returnFromRule, transform)
-    ])(initialSuffixContinuation("number_multiple", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("number_multiple", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("number", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "numeric", returnFromRule, transform)
-    ])(initialSuffixContinuation("number_single", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("number_single", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("alphabetical", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         rangeParser.bind(null, 65, 90, returnFromRule)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("alphabetical", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         rangeParser.bind(null, 97, 122, returnFromRule)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("alphanumeric", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "numeric", returnFromRule, transform)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("alphanumeric", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "alphabetical", returnFromRule, transform)
-    ])(initialContinuation(returnFromRule, iterator));
-    return cont(parser, [], iterator);
+    ])(initialContinuation(returnFromRule, iterator)), [], iterator);
 });
 
 addRule("identifier", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "identifierRest", returnFromRule, transform),
         identifierParser.bind(null, "alphabetical", returnFromRule, transform)
-    ])(initialSuffixContinuation("identifier_multiple", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("identifier_multiple", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("identifier", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "alphabetical", returnFromRule, transform)
-    ])(initialSuffixContinuation("identifier_single", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("identifier_single", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("identifierRest", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "identifierRest", returnFromRule, transform),
         identifierParser.bind(null, "alphanumeric", returnFromRule, transform)
-    ])(initialSuffixContinuation("identifierRest_multiple", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("identifierRest_multiple", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("identifierRest", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "alphanumeric", returnFromRule, transform)
-    ])(initialSuffixContinuation("identifierRest_single", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("identifierRest_single", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("part", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "identifier", returnFromRule, transform)
-    ])(initialSuffixContinuation("part_identifier", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("part_identifier", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("part", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "number", returnFromRule, transform),
         identifierParser.bind(null, "dash", returnFromRule, transform),
         identifierParser.bind(null, "number", returnFromRule, transform)
-    ])(initialSuffixContinuation("part_range", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("part_range", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("part", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "number", returnFromRule, transform)
-    ])(initialSuffixContinuation("part_number", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("part_number", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("part", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "dot", returnFromRule, transform)
-    ])(initialSuffixContinuation("part_eof", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("part_eof", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("parts", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "parts", returnFromRule, transform),
         identifierParser.bind(null, "whitespaces", returnFromRule, transform),
         identifierParser.bind(null, "part", returnFromRule, transform)
-    ])(initialSuffixContinuation("parts_multiple", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("parts_multiple", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("parts", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "part", returnFromRule, transform)
-    ])(initialSuffixContinuation("parts_single", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("parts_single", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("parts", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity
-    ])(initialSuffixContinuation("parts_none", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("parts_none", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("suffix", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "identifier", returnFromRule, transform),
         identifierParser.bind(null, "dash", returnFromRule, transform)
-    ])(initialSuffixContinuation("suffix_suffix", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("suffix_suffix", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("rule", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "newline", returnFromRule, transform),
         identifierParser.bind(null, "suffix", returnFromRule, transform),
@@ -381,50 +349,45 @@ addRule("rule", function (iterator, transform, returnFromRule) {
         identifierParser.bind(null, "parts", returnFromRule, transform),
         identifierParser.bind(null, "whitespaces", returnFromRule, transform),
         identifierParser.bind(null, "identifier", returnFromRule, transform)
-    ])(initialSuffixContinuation("rule_withSuffix", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("rule_withSuffix", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("rule", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "newline", returnFromRule, transform),
         identifierParser.bind(null, "whitespaces", returnFromRule, transform),
         identifierParser.bind(null, "parts", returnFromRule, transform),
         identifierParser.bind(null, "whitespaces", returnFromRule, transform),
         identifierParser.bind(null, "identifier", returnFromRule, transform)
-    ])(initialSuffixContinuation("rule_withoutSuffix", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("rule_withoutSuffix", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("grammar", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "grammar", returnFromRule, transform),
         identifierParser.bind(null, "newlines", returnFromRule, transform),
         identifierParser.bind(null, "rule", returnFromRule, transform),
         identifierParser.bind(null, "newlines", returnFromRule, transform)
-    ])(initialSuffixContinuation("grammar_multiple", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("grammar_multiple", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("grammar", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         identifierParser.bind(null, "newlines", returnFromRule, transform),
         identifierParser.bind(null, "rule", returnFromRule, transform),
         identifierParser.bind(null, "newlines", returnFromRule, transform)
-    ])(initialSuffixContinuation("grammar_single", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("grammar_single", returnFromRule, iterator, transform)), [], iterator);
 });
 
 addRule("start", function (iterator, transform, returnFromRule) {
-    var parser = pipe([
+    return cont(pipe([
         identity,
         eofParser.bind(null, returnFromRule),
         identifierParser.bind(null, "grammar", returnFromRule, transform)
-    ])(initialSuffixContinuation("start_start", returnFromRule, iterator, transform));
-    return cont(parser, [], iterator);
+    ])(initialSuffixContinuation("start_start", returnFromRule, iterator, transform)), [], iterator);
 });
 
 module.exports.parse = function (input, transform) {

@@ -43,7 +43,7 @@ function match (alternatives, iterator, transform, continuation) {
         });
     }
 }
-function numberParser (number, continuation, returnFromRule) {
+function numberParser (number, returnFromRule, continuation) {
     return function (items, iterator) {
         if (value(iterator) === number) {
             var result = {result: String.fromCharCode(value(iterator)), start: iterator, end: next(iterator)};
@@ -53,7 +53,7 @@ function numberParser (number, continuation, returnFromRule) {
         }
     };
 }
-function rangeParser (from, to, continuation, returnFromRule) {
+function rangeParser (from, to, returnFromRule, continuation) {
     return function (items, iterator) {
         var code = value(iterator);
         if (code >= from && code <= to) {
@@ -64,7 +64,7 @@ function rangeParser (from, to, continuation, returnFromRule) {
         }
     };
 }
-function identifierParser (identifier, continuation, returnFromRule, transform) {
+function identifierParser (identifier, returnFromRule, transform, continuation) {
     return function (items, iterator) {
         return cont(parse, identifier, iterator, transform, function (result) {
             if (result === null) { return cont(returnFromRule, null); }
@@ -72,7 +72,7 @@ function identifierParser (identifier, continuation, returnFromRule, transform) 
         });
     };
 }
-function eofParser (continuation, returnFromRule) {
+function eofParser (returnFromRule, continuation) {
     return function (items, iterator) {
         if (isEnd(iterator)) {
             return cont(continuation, items.concat([{result: null, start: iterator, end: iterator}]), iterator);
@@ -107,74 +107,74 @@ function parse (name, iterator, transform, continuation) {
 addRule("dash", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = numberParser(45, continuation, returnFromRule);
+    continuation = numberParser(45, returnFromRule, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("dot", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = numberParser(46, continuation, returnFromRule);
+    continuation = numberParser(46, returnFromRule, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("space", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = numberParser(32, continuation, returnFromRule);
+    continuation = numberParser(32, returnFromRule, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("lf", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = numberParser(10, continuation, returnFromRule);
+    continuation = numberParser(10, returnFromRule, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("cr", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = numberParser(13, continuation, returnFromRule);
+    continuation = numberParser(13, returnFromRule, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("newline", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("cr", continuation, returnFromRule, transform);
-    continuation = identifierParser("lf", continuation, returnFromRule, transform);
+    continuation = identifierParser("cr", returnFromRule, transform, continuation);
+    continuation = identifierParser("lf", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("newline", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("lf", continuation, returnFromRule, transform);
-    continuation = identifierParser("cr", continuation, returnFromRule, transform);
+    continuation = identifierParser("lf", returnFromRule, transform, continuation);
+    continuation = identifierParser("cr", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("newline", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("lf", continuation, returnFromRule, transform);
+    continuation = identifierParser("lf", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("newlines", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("newlines", continuation, returnFromRule, transform);
-    continuation = identifierParser("newline", continuation, returnFromRule, transform);
+    continuation = identifierParser("newlines", returnFromRule, transform, continuation);
+    continuation = identifierParser("newline", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("newlines", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("newline", continuation, returnFromRule, transform);
-    continuation = identifierParser("whitespaces", continuation, returnFromRule, transform);
+    continuation = identifierParser("newline", returnFromRule, transform, continuation);
+    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
@@ -187,8 +187,8 @@ addRule("newlines", function (iterator, transform, continuation) {
 addRule("whitespaces", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("whitespaces", continuation, returnFromRule, transform);
-    continuation = identifierParser("space", continuation, returnFromRule, transform);
+    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
+    continuation = identifierParser("space", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
@@ -201,126 +201,126 @@ addRule("whitespaces", function (iterator, transform, continuation) {
 addRule("numeric", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = rangeParser(48, 57, continuation, returnFromRule);
+    continuation = rangeParser(48, 57, returnFromRule, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("number", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("number_multiple", returnFromRule, iterator, transform);
-    continuation = identifierParser("number", continuation, returnFromRule, transform);
-    continuation = identifierParser("numeric", continuation, returnFromRule, transform);
+    continuation = identifierParser("number", returnFromRule, transform, continuation);
+    continuation = identifierParser("numeric", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("number", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("number_single", returnFromRule, iterator, transform);
-    continuation = identifierParser("numeric", continuation, returnFromRule, transform);
+    continuation = identifierParser("numeric", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("alphabetical", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = rangeParser(65, 90, continuation, returnFromRule);
+    continuation = rangeParser(65, 90, returnFromRule, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("alphabetical", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = rangeParser(97, 122, continuation, returnFromRule);
+    continuation = rangeParser(97, 122, returnFromRule, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("alphanumeric", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("numeric", continuation, returnFromRule, transform);
+    continuation = identifierParser("numeric", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("alphanumeric", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialContinuation(returnFromRule, iterator);
-    continuation = identifierParser("alphabetical", continuation, returnFromRule, transform);
+    continuation = identifierParser("alphabetical", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("identifier", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("identifier_multiple", returnFromRule, iterator, transform);
-    continuation = identifierParser("identifierRest", continuation, returnFromRule, transform);
-    continuation = identifierParser("alphabetical", continuation, returnFromRule, transform);
+    continuation = identifierParser("identifierRest", returnFromRule, transform, continuation);
+    continuation = identifierParser("alphabetical", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("identifier", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("identifier_single", returnFromRule, iterator, transform);
-    continuation = identifierParser("alphabetical", continuation, returnFromRule, transform);
+    continuation = identifierParser("alphabetical", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("identifierRest", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("identifierRest_multiple", returnFromRule, iterator, transform);
-    continuation = identifierParser("identifierRest", continuation, returnFromRule, transform);
-    continuation = identifierParser("alphanumeric", continuation, returnFromRule, transform);
+    continuation = identifierParser("identifierRest", returnFromRule, transform, continuation);
+    continuation = identifierParser("alphanumeric", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("identifierRest", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("identifierRest_single", returnFromRule, iterator, transform);
-    continuation = identifierParser("alphanumeric", continuation, returnFromRule, transform);
+    continuation = identifierParser("alphanumeric", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("part", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("part_identifier", returnFromRule, iterator, transform);
-    continuation = identifierParser("identifier", continuation, returnFromRule, transform);
+    continuation = identifierParser("identifier", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("part", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("part_range", returnFromRule, iterator, transform);
-    continuation = identifierParser("number", continuation, returnFromRule, transform);
-    continuation = identifierParser("dash", continuation, returnFromRule, transform);
-    continuation = identifierParser("number", continuation, returnFromRule, transform);
+    continuation = identifierParser("number", returnFromRule, transform, continuation);
+    continuation = identifierParser("dash", returnFromRule, transform, continuation);
+    continuation = identifierParser("number", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("part", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("part_number", returnFromRule, iterator, transform);
-    continuation = identifierParser("number", continuation, returnFromRule, transform);
+    continuation = identifierParser("number", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("part", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("part_eof", returnFromRule, iterator, transform);
-    continuation = identifierParser("dot", continuation, returnFromRule, transform);
+    continuation = identifierParser("dot", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("parts", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("parts_multiple", returnFromRule, iterator, transform);
-    continuation = identifierParser("parts", continuation, returnFromRule, transform);
-    continuation = identifierParser("whitespaces", continuation, returnFromRule, transform);
-    continuation = identifierParser("part", continuation, returnFromRule, transform);
+    continuation = identifierParser("parts", returnFromRule, transform, continuation);
+    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
+    continuation = identifierParser("part", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("parts", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("parts_single", returnFromRule, iterator, transform);
-    continuation = identifierParser("part", continuation, returnFromRule, transform);
+    continuation = identifierParser("part", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
@@ -333,58 +333,58 @@ addRule("parts", function (iterator, transform, continuation) {
 addRule("suffix", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("suffix_suffix", returnFromRule, iterator, transform);
-    continuation = identifierParser("identifier", continuation, returnFromRule, transform);
-    continuation = identifierParser("dash", continuation, returnFromRule, transform);
+    continuation = identifierParser("identifier", returnFromRule, transform, continuation);
+    continuation = identifierParser("dash", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("rule", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("rule_withSuffix", returnFromRule, iterator, transform);
-    continuation = identifierParser("newline", continuation, returnFromRule, transform);
-    continuation = identifierParser("suffix", continuation, returnFromRule, transform);
-    continuation = identifierParser("whitespaces", continuation, returnFromRule, transform);
-    continuation = identifierParser("parts", continuation, returnFromRule, transform);
-    continuation = identifierParser("whitespaces", continuation, returnFromRule, transform);
-    continuation = identifierParser("identifier", continuation, returnFromRule, transform);
+    continuation = identifierParser("newline", returnFromRule, transform, continuation);
+    continuation = identifierParser("suffix", returnFromRule, transform, continuation);
+    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
+    continuation = identifierParser("parts", returnFromRule, transform, continuation);
+    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
+    continuation = identifierParser("identifier", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("rule", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("rule_withoutSuffix", returnFromRule, iterator, transform);
-    continuation = identifierParser("newline", continuation, returnFromRule, transform);
-    continuation = identifierParser("whitespaces", continuation, returnFromRule, transform);
-    continuation = identifierParser("parts", continuation, returnFromRule, transform);
-    continuation = identifierParser("whitespaces", continuation, returnFromRule, transform);
-    continuation = identifierParser("identifier", continuation, returnFromRule, transform);
+    continuation = identifierParser("newline", returnFromRule, transform, continuation);
+    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
+    continuation = identifierParser("parts", returnFromRule, transform, continuation);
+    continuation = identifierParser("whitespaces", returnFromRule, transform, continuation);
+    continuation = identifierParser("identifier", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("grammar", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("grammar_multiple", returnFromRule, iterator, transform);
-    continuation = identifierParser("grammar", continuation, returnFromRule, transform);
-    continuation = identifierParser("newlines", continuation, returnFromRule, transform);
-    continuation = identifierParser("rule", continuation, returnFromRule, transform);
-    continuation = identifierParser("newlines", continuation, returnFromRule, transform);
+    continuation = identifierParser("grammar", returnFromRule, transform, continuation);
+    continuation = identifierParser("newlines", returnFromRule, transform, continuation);
+    continuation = identifierParser("rule", returnFromRule, transform, continuation);
+    continuation = identifierParser("newlines", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("grammar", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("grammar_single", returnFromRule, iterator, transform);
-    continuation = identifierParser("newlines", continuation, returnFromRule, transform);
-    continuation = identifierParser("rule", continuation, returnFromRule, transform);
-    continuation = identifierParser("newlines", continuation, returnFromRule, transform);
+    continuation = identifierParser("newlines", returnFromRule, transform, continuation);
+    continuation = identifierParser("rule", returnFromRule, transform, continuation);
+    continuation = identifierParser("newlines", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 
 addRule("start", function (iterator, transform, continuation) {
     var returnFromRule = continuation;
     continuation = initialSuffixContinuation("start_start", returnFromRule, iterator, transform);
-    continuation = eofParser(continuation, returnFromRule);
-    continuation = identifierParser("grammar", continuation, returnFromRule, transform);
+    continuation = eofParser(returnFromRule, continuation);
+    continuation = identifierParser("grammar", returnFromRule, transform, continuation);
     return cont(continuation, [], iterator);
 });
 

@@ -18,16 +18,16 @@ identifierRest-multiple a b
     <% a %><% b %>
 
 part-number number
-    numberParser(<% number %>, continuation, returnFromRule)
+    numberParser(<% number %>, returnFromRule, continuation)
 
 part-range from _ to
-    rangeParser(<% from %>, <% to %>, continuation, returnFromRule)
+    rangeParser(<% from %>, <% to %>, returnFromRule, continuation)
 
 part-identifier identifier
-    identifierParser("<% identifier %>", continuation, returnFromRule, transform)
+    identifierParser("<% identifier %>", returnFromRule, transform, continuation)
 
 part-eof
-    eofParser(continuation, returnFromRule)
+    eofParser(returnFromRule, continuation)
 
 parts-single n
     <% n %>
@@ -112,7 +112,7 @@ start-start grammar _
             });
         }
     }
-    function numberParser (number, continuation, returnFromRule) {
+    function numberParser (number, returnFromRule, continuation) {
         return function (items, iterator) {
             if (value(iterator) === number) {
                 var result = {result: String.fromCharCode(value(iterator)), start: iterator, end: next(iterator)};
@@ -122,7 +122,7 @@ start-start grammar _
             }
         };
     }
-    function rangeParser (from, to, continuation, returnFromRule) {
+    function rangeParser (from, to, returnFromRule, continuation) {
         return function (items, iterator) {
             var code = value(iterator);
             if (code >= from && code <= to) {
@@ -133,7 +133,7 @@ start-start grammar _
             }
         };
     }
-    function identifierParser (identifier, continuation, returnFromRule, transform) {
+    function identifierParser (identifier, returnFromRule, transform, continuation) {
         return function (items, iterator) {
             return cont(parse, identifier, iterator, transform, function (result) {
                 if (result === null) { return cont(returnFromRule, null); }
@@ -141,7 +141,7 @@ start-start grammar _
             });
         };
     }
-    function eofParser (continuation, returnFromRule) {
+    function eofParser (returnFromRule, continuation) {
         return function (items, iterator) {
             if (isEnd(iterator)) {
                 return cont(continuation, items.concat([{result: null, start: iterator, end: iterator}]), iterator);
